@@ -22,12 +22,14 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
             {assignment.video_style || 'No style specified'}
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {assignment.script_name || 'No script assigned'}
-          </span>
-        </div>
+        {assignment.script_required && (
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              {assignment.script_name}
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

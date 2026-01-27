@@ -31,6 +31,10 @@ function parseCSV(text: string): Assignment[] {
       obj[header] = values[index] || '';
     });
     
+    // Set script_required flag based on whether script_name has a value
+    const scriptName = obj.script_name?.toString().trim() || '';
+    obj.script_required = scriptName.length > 0;
+    
     return obj;
   });
 }

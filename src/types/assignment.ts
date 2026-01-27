@@ -4,5 +4,6 @@ export interface Assignment {
   product_name: string;
   video_style: string;
   script_name: string;
-  [key: string]: string;
+  script_required: boolean;
+  [key: string]: string | boolean;
 }

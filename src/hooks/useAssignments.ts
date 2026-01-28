@@ -1,51 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Assignment } from '@/types/assignment';
 
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=1020515194&single=true&output=csv';
 
-function parseCSV(text: string): Assignment[] {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-  
-  return lines.slice(1).map(line => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (const char of line) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    values.push(current.trim());
-    
-    const obj: Assignment = {} as Assignment;
-    headers.forEach((header, index) => {
-      obj[header] = values[index] || '';
-    });
-    
-    // Ensure script_name is always a string (never undefined)
-    obj.script_name = (obj.script_name ?? '').toString().trim();
-    
-    // Set script_required flag based on whether script_name has a value
-    obj.script_required = obj.script_name.length > 0;
-    
-    return obj;
-  });
-}
+function parseCSV(csvText: string): Assignment[] {
+  const lines = csvText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
 
-function getTodayPST(): string {
-  // IMPORTANT: Keep this as a plain string (YYYY-MM-DD) to avoid UTC/PST day shifts.
-  // Do NOT parse sheet dates into Date objects.
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
-  return todayStr;
+  if (lines.length < 2) return [];
+
+  // Get headers and normalize them
+  const headers = lines[0]
+    .split(',')
+    .map(header => header.replace(/"/g, '').trim().toLowerCase());
+
+  // Parse data rows
+  const rows: Assignment[] = lines.slice(1).map(line => {
+    const values = line
+      .split(',')
+      .map(value => value.replace(/"/g, '').replace(/[\r\n\t]+/g, '').trim());
+
+    const row: Assignment = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index] || '';
+    });
+
+    return row;
+  });
+
+  return rows;
 }
 
 export function useAssignments(creatorId: string | null) {
@@ -54,53 +39,71 @@ export function useAssignments(creatorId: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchAssignments() {
       setLoading(true);
       setError(null);
-      
+
       try {
-        const url = `${CSV_URL}&t=${Date.now()}`;
-        const response = await fetch(url, { cache: 'no-store' });
-        
+        console.log('=== ASSIGNMENT LOADING DEBUG ===');
+        console.log('Creator ID:', creatorId);
+        console.log('Fetching CSV from:', CSV_URL);
+
+        const response = await fetch(CSV_URL);
+
         if (!response.ok) {
-          throw new Error('Failed to fetch data');
+          throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`);
         }
-        
-        const text = await response.text();
-        const allAssignments = parseCSV(text);
 
-        // Required: use this exact code to get today's date string in PST.
-        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+        const csvText = await response.text();
+        console.log('CSV fetched successfully, length:', csvText.length);
+        console.log('CSV preview:', csvText.substring(0, 200));
 
-        const selectedCreator = String(creatorId || '').trim().toLowerCase();
+        const allRows = parseCSV(csvText);
+        console.log('Total parsed rows:', allRows.length);
+        console.log('First 3 rows:', allRows.slice(0, 3));
 
-        const filtered = allAssignments.filter((row) => {
-          // Required: treat sheet date as a plain string only (never Date(row.date_pst)).
-          const rowDateStr = String(row.date_pst || '').trim();
-
-          // Required: normalize creator IDs safely (trim + lowercase).
-          const rowCreator = String(row.creator_id || '').trim().toLowerCase();
-
-          // Existing requirement: only include active rows.
-          const activeValue = String(row.active || '').trim().toUpperCase();
-          const isActive = activeValue === 'TRUE';
-
-          // Debug logging (requested)
-          console.log('Today PST:', todayStr, 'Sheet Date:', rowDateStr, 'Creator:', rowCreator);
-
-          const creatorMatch = selectedCreator ? rowCreator === selectedCreator : true;
-          return rowDateStr === todayStr && creatorMatch && isActive;
+        // Get today's date in PST timezone (YYYY-MM-DD format)
+        const todayPST = new Date().toLocaleDateString('en-CA', {
+          timeZone: 'America/Los_Angeles'
         });
-        
-        setAssignments(filtered);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.log('Today in PST:', todayPST);
+
+        // Normalize creator ID for comparison
+        const normalizedCreatorId = (creatorId || '').trim().toLowerCase();
+        console.log('Looking for creator:', normalizedCreatorId);
+
+        // Filter assignments for today and this creator
+        const todaysAssignments = allRows.filter(row => {
+          const rowDate = String(row['date_pst'] || '')
+            .trim()
+            .replace(/[\r\n\t]+/g, '');
+
+          const rowCreatorId = String(row['creator_id'] || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[\r\n\t]+/g, '');
+
+          const dateMatch = rowDate === todayPST;
+          const creatorMatch = normalizedCreatorId === '' || rowCreatorId === normalizedCreatorId;
+
+          console.log(`Row check: date="${rowDate}" creator="${rowCreatorId}" → dateMatch=${dateMatch} creatorMatch=${creatorMatch}`);
+
+          return dateMatch && creatorMatch;
+        });
+
+        console.log('Filtered assignments count:', todaysAssignments.length);
+        console.log('Final assignments:', todaysAssignments);
+
+        setAssignments(todaysAssignments);
+      } catch (err: any) {
+        console.error('Error loading assignments:', err);
+        setError(err.message || 'Failed to load assignments');
       } finally {
         setLoading(false);
       }
     }
-    
-    fetchData();
+
+    fetchAssignments();
   }, [creatorId]);
 
   return { assignments, loading, error };

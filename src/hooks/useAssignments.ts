@@ -42,16 +42,7 @@ function parseCSV(text: string): Assignment[] {
 }
 
 function getTodayPST(): string {
-  const now = new Date();
-  const pstOffset = -8 * 60;
-  const utcOffset = now.getTimezoneOffset();
-  const pstTime = new Date(now.getTime() + (utcOffset + pstOffset) * 60000);
-  
-  const year = pstTime.getFullYear();
-  const month = String(pstTime.getMonth() + 1).padStart(2, '0');
-  const day = String(pstTime.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
 }
 
 export function useAssignments(creatorId: string | null) {

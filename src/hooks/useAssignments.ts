@@ -82,7 +82,9 @@ export function useAssignments(creatorId: string | null) {
           const dateMatch = assignment.date_pst === today;
           const creator = (assignment.creator_id || "").trim().toLowerCase();
           const creatorMatch = normalizedCreatorId ? creator === normalizedCreatorId : true;
-          return dateMatch && creatorMatch;
+          const activeValue = (assignment.active || "").toString().trim().toUpperCase();
+          const isActive = activeValue === "TRUE";
+          return dateMatch && creatorMatch && isActive;
         });
         
         setAssignments(filtered);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/types/assignment';
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/1-Hmc7uhJTcPt5RPX4W3-B1sEgfjLjBdlrlaFkqktjL0/export?format=csv&gid=1020515194';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=1020515194&single=true&output=csv';
 
 function parseCSV(text: string): Assignment[] {
   const lines = text.trim().split('\n');

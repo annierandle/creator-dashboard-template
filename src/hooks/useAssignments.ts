@@ -76,11 +76,12 @@ export function useAssignments(creatorId: string | null) {
         const allAssignments = parseCSV(text);
         const today = getTodayPST();
         
+        const normalizedCreatorId = creatorId ? creatorId.trim().toLowerCase() : null;
+        
         const filtered = allAssignments.filter(assignment => {
           const dateMatch = assignment.date_pst === today;
-          const creatorMatch = creatorId 
-            ? assignment.creator_id.toLowerCase() === creatorId.toLowerCase()
-            : true;
+          const creator = (assignment.creator_id || "").trim().toLowerCase();
+          const creatorMatch = normalizedCreatorId ? creator === normalizedCreatorId : true;
           return dateMatch && creatorMatch;
         });
         

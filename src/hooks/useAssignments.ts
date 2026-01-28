@@ -9,27 +9,92 @@ function parseCSV(csvText: string): Assignment[] {
     .map(line => line.trim())
     .filter(line => line.length > 0);
 
-  if (lines.length < 2) return [];
+  console.log('Total CSV lines:', lines.length);
+  console.log('Line 1 preview:', lines[0]?.substring(0, 80));
+  console.log('Line 2 preview:', lines[1]?.substring(0, 80));
+  console.log('Line 3 preview:', lines[2]?.substring(0, 80));
 
-  // Get headers and normalize them
-  const headers = lines[0]
-    .split(',')
-    .map(header => header.replace(/"/g, '').trim().toLowerCase());
+  if (lines.length < 4) {
+    console.error('CSV has insufficient lines (need at least 4)');
+    return [];
+  }
 
-  // Parse data rows
-  const rows: Assignment[] = lines.slice(1).map(line => {
-    const values = line
-      .split(',')
-      .map(value => value.replace(/"/g, '').replace(/[\r\n\t]+/g, '').trim());
+  // FIND THE REAL HEADER ROW - look for line containing 'date_pst'
+  const headerRowIndex = lines.findIndex(line => 
+    line.toLowerCase().includes('date_pst')
+  );
 
+  if (headerRowIndex === -1) {
+    console.error('CRITICAL: Could not find header row containing "date_pst"');
+    console.log('Available lines:', lines.slice(0, 5));
+    return [];
+  }
+
+  console.log(`✅ Found header row at index ${headerRowIndex}:`, lines[headerRowIndex]);
+
+  // Parse CSV line properly handling quoted values and commas inside quotes
+  function parseCsvLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  }
+
+  // Extract headers from the correct row
+  const headers = parseCsvLine(lines[headerRowIndex])
+    .map(h => h.toLowerCase().replace(/['"]+/g, '').trim());
+
+  console.log('✅ Parsed headers:', headers);
+
+  // Verify we have required headers
+  if (!headers.includes('date_pst') || !headers.includes('creator_id')) {
+    console.error('❌ Missing required headers! Found:', headers);
+    return [];
+  }
+
+  // Parse data rows (everything AFTER the header row)
+  const rows: Assignment[] = [];
+  for (let i = headerRowIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Skip completely empty rows
+    if (line.replace(/,/g, '').trim().length === 0) {
+      continue;
+    }
+
+    const values = parseCsvLine(line);
     const row: Assignment = {};
+    
     headers.forEach((header, index) => {
-      row[header] = values[index] || '';
+      let value = values[index] || '';
+      // Clean up: remove quotes and extra whitespace
+      value = value.replace(/^"|"$/g, '').replace(/[\r\n\t]+/g, '').trim();
+      row[header] = value;
     });
+    
+    // Only include rows that have both date_pst and creator_id
+    if (row['date_pst'] && row['creator_id']) {
+      rows.push(row);
+    }
+  }
 
-    return row;
-  });
-
+  console.log('✅ First parsed data row:', rows[0]);
+  console.log('✅ Total valid data rows:', rows.length);
+  
   return rows;
 }
 

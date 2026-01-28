@@ -33,17 +33,25 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
   const scriptName = assignment['script_name'] || '';
   const assignmentOrder = assignment['assignment_order_active'] || '';
   
+  // Debug: Log assignment order data
+  console.log('Assignment order debug:', {
+    productName,
+    assignmentOrder,
+    rawValue: assignment['assignment_order_active'],
+    allKeys: Object.keys(assignment)
+  });
+  
   const hasScript = scriptName.trim().length > 0;
   const hasVideoStyle = videoStyle.trim().length > 0;
   const hasOrder = assignmentOrder.trim().length > 0;
 
   return (
-    <Card className="assignment-card relative overflow-hidden">
+    <Card className="assignment-card relative overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
       {/* Order Badge - Top Right */}
       {hasOrder && (
         <div className="absolute top-3 right-3 z-10">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-md">
-            <span className="text-xs font-bold text-primary-foreground">
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-primary flex items-center justify-center shadow-md">
+            <span className="text-[10px] sm:text-sm font-bold text-primary-foreground">
               #{assignmentOrder}
             </span>
           </div>
@@ -70,7 +78,7 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
       <CardContent className="space-y-2 pt-0">
         {/* Script Status */}
         {hasScript ? (
-          <div className="flex items-start gap-2 p-2.5 bg-muted/50 rounded-md">
+          <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
             <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
             <div>
               <span className="text-sm text-foreground">
@@ -79,7 +87,7 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
             </div>
           </div>
         ) : (
-          <div className="flex items-start gap-2 p-2.5 bg-muted/30 rounded-md border border-border/50">
+          <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-md border border-border/50">
             <VolumeX className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
             <div>
               <span className="text-sm text-muted-foreground">

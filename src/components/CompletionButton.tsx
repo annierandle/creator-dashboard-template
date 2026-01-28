@@ -86,7 +86,7 @@ export function CompletionButton({ creatorId }: CompletionButtonProps) {
         <Button
           onClick={handleComplete}
           size="lg"
-          className="w-full sm:w-auto sm:min-w-[280px] bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-base"
+          className="w-full sm:w-auto sm:min-w-[280px] min-h-[44px] bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-base transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
         >
           <Check className="h-5 w-5 mr-2" />
           Mark All Uploads Complete

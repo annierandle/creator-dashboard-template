@@ -85,7 +85,7 @@ const Index = () => {
           {/* Personalized Welcome */}
           {displayName && (
             <div className="mt-3 pt-3 border-t border-border/50">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-xl font-bold text-foreground">
                 Hi {displayName}! 👋
               </h2>
               {!loading && assignments.length > 0 && (

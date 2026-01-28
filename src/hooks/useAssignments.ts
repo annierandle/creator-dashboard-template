@@ -42,7 +42,10 @@ function parseCSV(text: string): Assignment[] {
 }
 
 function getTodayPST(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+  // IMPORTANT: Keep this as a plain string (YYYY-MM-DD) to avoid UTC/PST day shifts.
+  // Do NOT parse sheet dates into Date objects.
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+  return todayStr;
 }
 
 export function useAssignments(creatorId: string | null) {
@@ -65,17 +68,28 @@ export function useAssignments(creatorId: string | null) {
         
         const text = await response.text();
         const allAssignments = parseCSV(text);
-        const today = getTodayPST();
-        
-        const normalizedCreatorId = creatorId ? creatorId.trim().toLowerCase() : null;
-        
-        const filtered = allAssignments.filter(assignment => {
-          const dateMatch = assignment.date_pst === today;
-          const creator = (assignment.creator_id || "").trim().toLowerCase();
-          const creatorMatch = normalizedCreatorId ? creator === normalizedCreatorId : true;
-          const activeValue = (assignment.active || "").toString().trim().toUpperCase();
-          const isActive = activeValue === "TRUE";
-          return dateMatch && creatorMatch && isActive;
+
+        // Required: use this exact code to get today's date string in PST.
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+
+        const selectedCreator = String(creatorId || '').trim().toLowerCase();
+
+        const filtered = allAssignments.filter((row) => {
+          // Required: treat sheet date as a plain string only (never Date(row.date_pst)).
+          const rowDateStr = String(row.date_pst || '').trim();
+
+          // Required: normalize creator IDs safely (trim + lowercase).
+          const rowCreator = String(row.creator_id || '').trim().toLowerCase();
+
+          // Existing requirement: only include active rows.
+          const activeValue = String(row.active || '').trim().toUpperCase();
+          const isActive = activeValue === 'TRUE';
+
+          // Debug logging (requested)
+          console.log('Today PST:', todayStr, 'Sheet Date:', rowDateStr, 'Creator:', rowCreator);
+
+          const creatorMatch = selectedCreator ? rowCreator === selectedCreator : true;
+          return rowDateStr === todayStr && creatorMatch && isActive;
         });
         
         setAssignments(filtered);

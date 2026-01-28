@@ -31,14 +31,13 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
   const productName = assignment['product_name'] || 'Untitled Product';
   const videoStyle = assignment['video_style'] || '';
   const scriptName = assignment['script_name'] || '';
-  const assignmentOrder = assignment['assignment_order_active'] || '';
+  const assignmentOrder = assignment['assignment_order'] || '';
   
   // Debug: Log assignment order data
   console.log('Assignment order debug:', {
     productName,
     assignmentOrder,
-    rawValue: assignment['assignment_order_active'],
-    allKeys: Object.keys(assignment)
+    rawValue: assignment['assignment_order'],
   });
   
   const hasScript = scriptName.trim().length > 0;

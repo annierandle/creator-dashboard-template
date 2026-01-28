@@ -102,6 +102,9 @@ export function useAssignments(creatorId: string | null) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = () => setRefreshKey(prev => prev + 1);
 
   useEffect(() => {
     async function fetchAssignments() {
@@ -169,7 +172,7 @@ export function useAssignments(creatorId: string | null) {
     }
 
     fetchAssignments();
-  }, [creatorId]);
+  }, [creatorId, refreshKey]);
 
-  return { assignments, loading, error };
+  return { assignments, loading, error, refetch };
 }

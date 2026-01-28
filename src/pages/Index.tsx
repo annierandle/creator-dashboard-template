@@ -1,9 +1,12 @@
 import { useSearchParams } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useAssignments } from '@/hooks/useAssignments';
-import { AssignmentCard } from '@/components/AssignmentCard';
+import { AccountGroup } from '@/components/AccountGroup';
+import { CompletionButton } from '@/components/CompletionButton';
 import { EmptyState, ErrorState } from '@/components/EmptyState';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { CalendarDays, User } from 'lucide-react';
+import { Assignment } from '@/types/assignment';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -15,6 +18,33 @@ const Index = () => {
     month: 'long',
     day: 'numeric',
   });
+
+  // Group assignments by account_name
+  const groupedAssignments = useMemo(() => {
+    return assignments.reduce<Record<string, Assignment[]>>((groups, assignment) => {
+      const accountName = assignment['account_name'] || 'Unknown';
+      if (!groups[accountName]) {
+        groups[accountName] = [];
+      }
+      groups[accountName].push(assignment);
+      return groups;
+    }, {});
+  }, [assignments]);
+
+  // Sort account names for consistent display
+  const sortedAccountNames = useMemo(() => {
+    return Object.keys(groupedAssignments).sort((a, b) => {
+      // Try numeric sort if both are numbers
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.localeCompare(b);
+    });
+  }, [groupedAssignments]);
+
+  const totalAssignments = assignments.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -48,13 +78,25 @@ const Index = () => {
         ) : assignments.length === 0 ? (
           <EmptyState creatorId={creatorId} />
         ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {assignments.length} assignment{assignments.length !== 1 ? 's' : ''} for today
+          <div>
+            {/* Summary */}
+            <p className="text-sm text-muted-foreground mb-6">
+              {totalAssignments} assignment{totalAssignments !== 1 ? 's' : ''} across {sortedAccountNames.length} account{sortedAccountNames.length !== 1 ? 's' : ''}
             </p>
-            {assignments.map((assignment, index) => (
-              <AssignmentCard key={index} assignment={assignment} />
-            ))}
+
+            {/* Account Groups */}
+            <div className="space-y-6">
+              {sortedAccountNames.map((accountName) => (
+                <AccountGroup
+                  key={accountName}
+                  accountName={accountName}
+                  assignments={groupedAssignments[accountName]}
+                />
+              ))}
+            </div>
+
+            {/* Completion Button */}
+            <CompletionButton creatorId={creatorId} />
           </div>
         )}
       </main>

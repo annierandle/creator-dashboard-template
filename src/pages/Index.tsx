@@ -1,23 +1,34 @@
 import { useSearchParams } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useAssignments } from '@/hooks/useAssignments';
 import { AccountGroup } from '@/components/AccountGroup';
 import { CompletionButton } from '@/components/CompletionButton';
 import { EmptyState, ErrorState } from '@/components/EmptyState';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
-import { CalendarDays, User } from 'lucide-react';
+import { CalendarDays, RefreshCw } from 'lucide-react';
 import { Assignment } from '@/types/assignment';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
   const creatorId = searchParams.get('creator_id');
-  const { assignments, loading, error } = useAssignments(creatorId);
+  const { assignments, loading, error, refetch } = useAssignments(creatorId);
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
   });
+
+  // Capitalize creator name for display
+  const displayName = useMemo(() => {
+    if (!creatorId) return null;
+    return creatorId.charAt(0).toUpperCase() + creatorId.slice(1).toLowerCase();
+  }, [creatorId]);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   // Group assignments by account_name
   const groupedAssignments = useMemo(() => {
@@ -54,18 +65,36 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-foreground">Assignments</h1>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mt-0.5">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                 <CalendarDays className="h-3.5 w-3.5" />
                 <span>{today}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
               </div>
             </div>
-            {creatorId && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
-                <User className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-primary">{creatorId}</span>
-              </div>
-            )}
           </div>
+          
+          {/* Personalized Welcome */}
+          {displayName && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <h2 className="text-lg font-semibold text-foreground">
+                Hi {displayName}! 👋
+              </h2>
+              {!loading && assignments.length > 0 && (
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  You have {assignments.length} assignment{assignments.length !== 1 ? 's' : ''} across {sortedAccountNames.length} account{sortedAccountNames.length !== 1 ? 's' : ''} today
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -79,10 +108,6 @@ const Index = () => {
           <EmptyState creatorId={creatorId} />
         ) : (
           <div>
-            {/* Summary */}
-            <p className="text-sm text-muted-foreground mb-6">
-              {totalAssignments} assignment{totalAssignments !== 1 ? 's' : ''} across {sortedAccountNames.length} account{sortedAccountNames.length !== 1 ? 's' : ''}
-            </p>
 
             {/* Account Groups */}
             <div className="space-y-6">

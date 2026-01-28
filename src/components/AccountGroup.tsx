@@ -15,7 +15,7 @@ export function AccountGroup({ accountName, assignments }: AccountGroupProps) {
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-primary" />
           <h2 className="font-semibold text-foreground">
-            Account {accountName}
+            {accountName}
           </h2>
         </div>
         <p className="text-sm text-muted-foreground mt-1">

@@ -1,11 +1,12 @@
 import { useSearchParams } from 'react-router-dom';
 import { useMemo, useCallback } from 'react';
 import { useAssignments } from '@/hooks/useAssignments';
+import { useFilmingProgress } from '@/hooks/useFilmingProgress';
 import { AccountGroup } from '@/components/AccountGroup';
 import { CompletionButton } from '@/components/CompletionButton';
 import { EmptyState, ErrorState } from '@/components/EmptyState';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
-import { CalendarDays, RefreshCw } from 'lucide-react';
+import { CalendarDays, RefreshCw, Video, CheckCircle2 } from 'lucide-react';
 import { Assignment } from '@/types/assignment';
 import { Button } from '@/components/ui/button';
 
@@ -13,6 +14,12 @@ const Index = () => {
   const [searchParams] = useSearchParams();
   const creatorId = searchParams.get('creator_id');
   const { assignments, loading, error, refetch } = useAssignments(creatorId);
+  
+  // Filming progress tracking
+  const { isFilmed, toggleFilmed, filmedCount, allFilmed } = useFilmingProgress(
+    creatorId, 
+    assignments.length
+  );
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -30,16 +37,33 @@ const Index = () => {
     refetch();
   }, [refetch]);
 
-  // Group assignments by account_name
-  const groupedAssignments = useMemo(() => {
-    return assignments.reduce<Record<string, Assignment[]>>((groups, assignment) => {
+  // Calculate enhanced statistics
+  const stats = useMemo(() => {
+    const totalAssignments = assignments.length;
+    const uniqueProducts = new Set(assignments.map(a => a['product_name'])).size;
+    const accountCount = new Set(assignments.map(a => a['account_name'])).size;
+    
+    console.log('Stats calculated:', { totalAssignments, uniqueProducts, accountCount });
+    
+    return { totalAssignments, uniqueProducts, accountCount };
+  }, [assignments]);
+
+  // Group assignments by account_name with global indices
+  const { groupedAssignments, globalIndicesMap } = useMemo(() => {
+    const groups: Record<string, Assignment[]> = {};
+    const indices: Record<string, number[]> = {};
+    
+    assignments.forEach((assignment, globalIndex) => {
       const accountName = assignment['account_name'] || 'Unknown';
       if (!groups[accountName]) {
         groups[accountName] = [];
+        indices[accountName] = [];
       }
       groups[accountName].push(assignment);
-      return groups;
-    }, {});
+      indices[accountName].push(globalIndex);
+    });
+    
+    return { groupedAssignments: groups, globalIndicesMap: indices };
   }, [assignments]);
 
   // Sort account names for consistent display
@@ -54,8 +78,6 @@ const Index = () => {
       return a.localeCompare(b);
     });
   }, [groupedAssignments]);
-
-  const totalAssignments = assignments.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,9 +111,30 @@ const Index = () => {
                 Hi {displayName}! 👋
               </h2>
               {!loading && assignments.length > 0 && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  You have {assignments.length} assignment{assignments.length !== 1 ? 's' : ''} across {sortedAccountNames.length} account{sortedAccountNames.length !== 1 ? 's' : ''} today
-                </p>
+                <>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    You have {stats.totalAssignments} assignment{stats.totalAssignments !== 1 ? 's' : ''} for {stats.uniqueProducts} unique product{stats.uniqueProducts !== 1 ? 's' : ''} across {stats.accountCount} account{stats.accountCount !== 1 ? 's' : ''} today
+                  </p>
+                  
+                  {/* Filming Progress */}
+                  <div className="mt-2 flex items-center gap-2">
+                    {allFilmed ? (
+                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="text-sm font-medium">
+                          All videos filmed! ✓ Ready to mark uploads complete
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Video className="h-4 w-4" />
+                        <span className="text-sm">
+                          📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -108,7 +151,6 @@ const Index = () => {
           <EmptyState creatorId={creatorId} />
         ) : (
           <div>
-
             {/* Account Groups */}
             <div className="space-y-6">
               {sortedAccountNames.map((accountName) => (
@@ -116,6 +158,9 @@ const Index = () => {
                   key={accountName}
                   accountName={accountName}
                   assignments={groupedAssignments[accountName]}
+                  globalIndices={globalIndicesMap[accountName]}
+                  isFilmed={isFilmed}
+                  onToggleFilmed={toggleFilmed}
                 />
               ))}
             </div>

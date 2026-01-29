@@ -5,9 +5,18 @@ import { Building2 } from 'lucide-react';
 interface AccountGroupProps {
   accountName: string;
   assignments: Assignment[];
+  globalIndices: number[];
+  isFilmed: (index: number) => boolean;
+  onToggleFilmed: (index: number) => void;
 }
 
-export function AccountGroup({ accountName, assignments }: AccountGroupProps) {
+export function AccountGroup({ 
+  accountName, 
+  assignments, 
+  globalIndices,
+  isFilmed,
+  onToggleFilmed
+}: AccountGroupProps) {
   return (
     <div className="space-y-3">
       {/* Account Header */}
@@ -25,8 +34,14 @@ export function AccountGroup({ accountName, assignments }: AccountGroupProps) {
 
       {/* Assignment Cards */}
       <div className="space-y-3 pl-2">
-        {assignments.map((assignment, index) => (
-          <AssignmentCard key={index} assignment={assignment} />
+        {assignments.map((assignment, localIndex) => (
+          <AssignmentCard 
+            key={globalIndices[localIndex]} 
+            assignment={assignment}
+            index={globalIndices[localIndex]}
+            isFilmed={isFilmed(globalIndices[localIndex])}
+            onToggleFilmed={onToggleFilmed}
+          />
         ))}
       </div>
     </div>

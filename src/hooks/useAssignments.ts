@@ -59,6 +59,7 @@ function parseCSV(csvText: string): Assignment[] {
     .map(h => h.toLowerCase().replace(/['"]+/g, '').trim());
 
   console.log('✅ Parsed headers:', headers);
+  console.log('✅ Has script_content column:', headers.includes('script_content'));
 
   // Verify we have required headers
   if (!headers.includes('date_pst') || !headers.includes('creator_id')) {

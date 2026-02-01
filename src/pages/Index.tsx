@@ -1,16 +1,19 @@
 import { useSearchParams } from 'react-router-dom';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useAssignments } from '@/hooks/useAssignments';
 import { useFilmingProgress } from '@/hooks/useFilmingProgress';
 import { AccountGroup } from '@/components/AccountGroup';
 import { CompletionButton } from '@/components/CompletionButton';
 import { EmptyState, ErrorState } from '@/components/EmptyState';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
-import { CalendarDays, RefreshCw, Video, CheckCircle2 } from 'lucide-react';
+import { CreatorHub } from '@/components/CreatorHub';
+import { CalendarDays, RefreshCw, Video, CheckCircle2, LayoutGrid, ClipboardList } from 'lucide-react';
 import { Assignment } from '@/types/assignment';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState('assignments');
   const [searchParams] = useSearchParams();
   const creatorId = searchParams.get('creator_id');
   const { assignments, loading, error, refetch } = useAssignments(creatorId);
@@ -79,6 +82,10 @@ const Index = () => {
     });
   }, [groupedAssignments]);
 
+  const handleGoToAssignments = useCallback(() => {
+    setActiveTab('assignments');
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -86,7 +93,7 @@ const Index = () => {
         <div className="container max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-foreground">Assignments</h1>
+              <h1 className="text-xl font-bold text-foreground">Creator Dashboard</h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                 <CalendarDays className="h-3.5 w-3.5" />
                 <span>{today}</span>
@@ -104,71 +111,101 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Personalized Welcome */}
-          {displayName && (
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <h2 className="text-xl font-bold text-foreground">
-                Hi {displayName}! 👋
-              </h2>
-              {!loading && assignments.length > 0 && (
-                <>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    You have {stats.totalAssignments} assignment{stats.totalAssignments !== 1 ? 's' : ''} for {stats.uniqueProducts} unique product{stats.uniqueProducts !== 1 ? 's' : ''} across {stats.accountCount} account{stats.accountCount !== 1 ? 's' : ''} today
-                  </p>
-                  
-                  {/* Filming Progress */}
-                  <div className="mt-2 flex items-center gap-2">
-                    {allFilmed ? (
-                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                        <CheckCircle2 className="h-4 w-4" />
-                        <span className="text-sm font-medium">
-                          All videos filmed! ✓ Ready to mark uploads complete
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Video className="h-4 w-4" />
-                        <span className="text-sm">
-                          📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+          {/* Tab Navigation */}
+          <div className="mt-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="assignments" className="gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Assignments
+                </TabsTrigger>
+                <TabsTrigger value="hub" className="gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  Hub
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container max-w-2xl mx-auto px-4 py-6">
-        {loading ? (
-          <LoadingSkeleton />
-        ) : error ? (
-          <ErrorState message={error} />
-        ) : assignments.length === 0 ? (
-          <EmptyState creatorId={creatorId} />
-        ) : (
-          <div>
-            {/* Account Groups */}
-            <div className="space-y-6">
-              {sortedAccountNames.map((accountName) => (
-                <AccountGroup
-                  key={accountName}
-                  accountName={accountName}
-                  assignments={groupedAssignments[accountName]}
-                  globalIndices={globalIndicesMap[accountName]}
-                  isFilmed={isFilmed}
-                  onToggleFilmed={toggleFilmed}
-                />
-              ))}
-            </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          {/* Assignments Tab */}
+          <TabsContent value="assignments" className="mt-0">
+            {/* Personalized Welcome for Assignments */}
+            {displayName && (
+              <div className="mb-6 pb-4 border-b border-border/50">
+                <h2 className="text-xl font-bold text-foreground">
+                  Hi {displayName}! 👋
+                </h2>
+                {!loading && assignments.length > 0 && (
+                  <>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      You have {stats.totalAssignments} assignment{stats.totalAssignments !== 1 ? 's' : ''} for {stats.uniqueProducts} unique product{stats.uniqueProducts !== 1 ? 's' : ''} across {stats.accountCount} account{stats.accountCount !== 1 ? 's' : ''} today
+                    </p>
+                    
+                    {/* Filming Progress */}
+                    <div className="mt-2 flex items-center gap-2">
+                      {allFilmed ? (
+                        <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span className="text-sm font-medium">
+                            All videos filmed! ✓ Ready to mark uploads complete
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Video className="h-4 w-4" />
+                          <span className="text-sm">
+                            📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
-            {/* Completion Button */}
-            <CompletionButton creatorId={creatorId} />
-          </div>
-        )}
+            {loading ? (
+              <LoadingSkeleton />
+            ) : error ? (
+              <ErrorState message={error} />
+            ) : assignments.length === 0 ? (
+              <EmptyState creatorId={creatorId} />
+            ) : (
+              <div>
+                {/* Account Groups */}
+                <div className="space-y-6">
+                  {sortedAccountNames.map((accountName) => (
+                    <AccountGroup
+                      key={accountName}
+                      accountName={accountName}
+                      assignments={groupedAssignments[accountName]}
+                      globalIndices={globalIndicesMap[accountName]}
+                      isFilmed={isFilmed}
+                      onToggleFilmed={toggleFilmed}
+                    />
+                  ))}
+                </div>
+
+                {/* Completion Button */}
+                <CompletionButton creatorId={creatorId} />
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Hub Tab */}
+          <TabsContent value="hub" className="mt-0">
+            <CreatorHub 
+              creatorName={creatorId}
+              assignments={assignments}
+              onGoToAssignments={handleGoToAssignments}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

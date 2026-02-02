@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Assignment } from '@/types/assignment';
+import { useHubResources } from '@/hooks/useHubResources';
+import { useUpcomingAssignments } from '@/hooks/useUpcomingAssignments';
 import { 
   CalendarDays, 
   CalendarCheck, 
@@ -8,9 +10,11 @@ import {
   Bell, 
   ExternalLink,
   Video,
-  TrendingUp,
   FileText,
-  HelpCircle
+  HelpCircle,
+  Film,
+  Gift,
+  CheckSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -21,6 +25,9 @@ interface CreatorHubProps {
 }
 
 export function CreatorHub({ creatorName, assignments, onGoToAssignments }: CreatorHubProps) {
+  const { updates, loading: resourcesLoading } = useHubResources();
+  const { upcomingDays, loading: upcomingLoading } = useUpcomingAssignments(creatorName);
+
   const displayName = useMemo(() => {
     if (!creatorName) return 'Creator';
     return creatorName.charAt(0).toUpperCase() + creatorName.slice(1).toLowerCase();
@@ -33,27 +40,24 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
     return { totalAssignments, uniqueProducts, accountCount };
   }, [assignments]);
 
-  // Mock data for upcoming work (in a real app, this would come from the CSV with date filtering)
-  const upcomingDays = [
-    { day: 'Tomorrow', count: Math.floor(Math.random() * 5) + 2 },
-    { day: 'In 2 days', count: Math.floor(Math.random() * 4) + 1 },
-    { day: 'In 3 days', count: Math.floor(Math.random() * 6) + 3 },
-  ];
-
-  // Resource links
+  // Resource links - Updated per requirements
   const resources = [
-    { title: 'Filming Guidelines', icon: Video, description: 'Best practices for video creation' },
+    { title: 'Filming Checklist', icon: CheckSquare, description: 'Step-by-step filming guide' },
     { title: 'Script Templates', icon: FileText, description: 'Standard script formats' },
-    { title: 'Brand Guidelines', icon: BookOpen, description: 'Style and brand requirements' },
+    { title: 'Examples', icon: Film, description: 'Video style examples & reference accounts' },
     { title: 'FAQ & Help', icon: HelpCircle, description: 'Common questions answered' },
   ];
 
-  // Recent updates/announcements
-  const updates = [
-    { title: 'New script format available', date: 'Jan 30', type: 'feature' },
-    { title: 'Reminder: Submit by 5pm PST', date: 'Jan 29', type: 'reminder' },
-    { title: 'February schedule published', date: 'Jan 28', type: 'info' },
-  ];
+  // Format date for display (e.g., "Jan 30")
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -80,9 +84,10 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              {/* FIX 1: Tight horizontal layout for number + "assignments" */}
+              <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-foreground">{stats.totalAssignments}</span>
-                <span className="text-sm text-muted-foreground">assignments</span>
+                <span className="text-lg text-muted-foreground">assignments</span>
               </div>
               <div className="flex gap-4 text-sm text-muted-foreground">
                 <span>{stats.uniqueProducts} products</span>
@@ -97,7 +102,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
           </CardContent>
         </Card>
 
-        {/* Upcoming Work Card */}
+        {/* Upcoming Work Card - With real data */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -108,20 +113,47 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingDays.map((day, index) => (
-                <div key={index} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <span className="text-sm text-foreground">{day.day}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">{day.count}</span>
-                    <TrendingUp className="h-3 w-3 text-muted-foreground" />
+              {upcomingLoading ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : (
+                upcomingDays.map((day, index) => (
+                  <div key={index} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                    <span className="text-sm text-foreground">{day.label}</span>
+                    <div className="flex items-center gap-2">
+                      {day.scheduled ? (
+                        <span className="text-sm font-medium text-foreground">
+                          {day.count} assignment{day.count !== 1 ? 's' : ''}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">
+                          Not yet scheduled
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Resources Card */}
+        {/* Bonus Opportunities Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">💰 Bonus Opportunities</CardTitle>
+            </div>
+            <CardDescription>Optional videos for extra earnings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Check back soon for bonus video opportunities and extra earning chances!
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Resources Card - Updated */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -145,8 +177,8 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
           </CardContent>
         </Card>
 
-        {/* Updates Card */}
-        <Card>
+        {/* Updates Card - Connected to Hub_Resources */}
+        <Card className="md:col-span-2">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
@@ -155,20 +187,45 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
             <CardDescription>Recent announcements</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {updates.map((update, index) => (
-                <div key={index} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
-                  <div className={`w-2 h-2 rounded-full mt-1.5 ${
-                    update.type === 'feature' ? 'bg-green-500' :
-                    update.type === 'reminder' ? 'bg-yellow-500' : 'bg-blue-500'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">{update.title}</p>
-                    <p className="text-xs text-muted-foreground">{update.date}</p>
+            {resourcesLoading ? (
+              <div className="text-sm text-muted-foreground">Loading updates...</div>
+            ) : updates.length === 0 ? (
+              <div className="text-sm text-muted-foreground py-4 text-center">
+                No recent updates - check back soon!
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {updates.map((update, index) => (
+                  <div key={index} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
+                    <div className="w-2 h-2 rounded-full mt-1.5 bg-primary" />
+                    <div className="flex-1 min-w-0">
+                      {update.link ? (
+                        <a 
+                          href={update.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
+                        >
+                          {update.title}
+                        </a>
+                      ) : (
+                        <p className="text-sm font-medium text-foreground">{update.title}</p>
+                      )}
+                      {update.content && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          {update.content}
+                        </p>
+                      )}
+                      {update.date_posted && (
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          {formatDate(update.date_posted)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

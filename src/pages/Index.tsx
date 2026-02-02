@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('assignments');
+  const [activeTab, setActiveTab] = useState('hub');
   const [searchParams] = useSearchParams();
   const creatorId = searchParams.get('creator_id');
   const { assignments, loading, error, refetch } = useAssignments(creatorId);
@@ -115,13 +115,13 @@ const Index = () => {
           <div className="mt-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="assignments" className="gap-2">
-                  <ClipboardList className="h-4 w-4" />
-                  Assignments
-                </TabsTrigger>
                 <TabsTrigger value="hub" className="gap-2">
                   <LayoutGrid className="h-4 w-4" />
                   Hub
+                </TabsTrigger>
+                <TabsTrigger value="assignments" className="gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Assignments
                 </TabsTrigger>
               </TabsList>
             </Tabs>

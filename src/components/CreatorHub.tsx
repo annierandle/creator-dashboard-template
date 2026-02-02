@@ -25,7 +25,7 @@ interface CreatorHubProps {
 }
 
 export function CreatorHub({ creatorName, assignments, onGoToAssignments }: CreatorHubProps) {
-  const { updates, loading: resourcesLoading } = useHubResources();
+  const { updates, bonusOpportunities, loading: resourcesLoading } = useHubResources();
   const { upcomingDays, loading: upcomingLoading } = useUpcomingAssignments(creatorName);
 
   const displayName = useMemo(() => {
@@ -137,7 +137,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
           </CardContent>
         </Card>
 
-        {/* Bonus Opportunities Card */}
+        {/* Bonus Opportunities Card - Dynamic from Hub_Resources */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -147,9 +147,41 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
             <CardDescription>Optional videos for extra earnings</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Check back soon for bonus video opportunities and extra earning chances!
-            </p>
+            {resourcesLoading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : bonusOpportunities.length > 0 ? (
+              <div className="space-y-3">
+                {bonusOpportunities.slice(0, 1).map((bonus, index) => (
+                  <div key={index} className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">{bonus.title}</p>
+                    {bonus.content && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">{bonus.content}</p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      {bonus.date_posted && (
+                        <span className="text-xs text-muted-foreground/70">
+                          Posted: {formatDate(bonus.date_posted)}
+                        </span>
+                      )}
+                      {bonus.link && (
+                        <a 
+                          href={bonus.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline font-medium"
+                        >
+                          View Details →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Check back soon for bonus video opportunities and extra earning chances!
+              </p>
+            )}
           </CardContent>
         </Card>
 

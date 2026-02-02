@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-// Hub_Resources tab from the same Google Sheet
-const HUB_RESOURCES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=0&single=true&output=csv';
+// Hub_Resources tab from the same Google Sheet - GID: 528090500
+const HUB_RESOURCES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=528090500&single=true&output=csv';
 
 export interface HubResource {
   type: string;
@@ -93,6 +93,7 @@ export function useHubResources() {
 
       try {
         console.log('=== HUB RESOURCES LOADING ===');
+        console.log('Fetching Hub_Resources from GID: 528090500');
         const response = await fetch(HUB_RESOURCES_CSV_URL);
 
         if (!response.ok) {
@@ -100,10 +101,17 @@ export function useHubResources() {
         }
 
         const csvText = await response.text();
+        console.log(`Hub_Resources CSV length: ${csvText.length} characters`);
+        console.log('Hub_Resources CSV preview:', csvText.substring(0, 200));
+        
         const allResources = parseCSV(csvText);
         
+        const updateCount = allResources.filter(r => r.type.toLowerCase() === 'update').length;
+        const bonusCount = allResources.filter(r => r.type.toLowerCase() === 'bonus').length;
+        const resourceCount = allResources.filter(r => r.type.toLowerCase() === 'resource').length;
+        
+        console.log(`Parsed Hub_Resources: ${updateCount} updates, ${resourceCount} resources, ${bonusCount} bonus items`);
         console.log(`Hub Resources loaded: ${allResources.length} items found`);
-        console.log('Resource types:', [...new Set(allResources.map(r => r.type))]);
         
         setResources(allResources);
       } catch (err: any) {

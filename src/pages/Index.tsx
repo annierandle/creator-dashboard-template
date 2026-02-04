@@ -141,7 +141,7 @@ const Index = () => {
             </h2>
             {!loading && assignments.length > 0 && (
               <>
-                <p className="text-base text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                   You have {stats.totalAssignments} total assignments today across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
                 </p>
                 

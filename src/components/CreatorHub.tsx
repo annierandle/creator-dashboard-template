@@ -1,20 +1,20 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Assignment } from '@/types/assignment';
 import { useHubResources } from '@/hooks/useHubResources';
 import { useUpcomingAssignments } from '@/hooks/useUpcomingAssignments';
+import { useUpdateReadStatus } from '@/hooks/useUpdateReadStatus';
 import { 
   CalendarDays, 
   CalendarCheck, 
   BookOpen, 
   Bell, 
   ExternalLink,
-  Video,
   FileText,
-  HelpCircle,
+  Camera,
   Film,
-  Gift,
-  CheckSquare
+  FolderOpen,
+  Gift
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -24,9 +24,21 @@ interface CreatorHubProps {
   onGoToAssignments: () => void;
 }
 
+// Icon mapping for resource tiles
+const RESOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  'MOF Guidelines': FileText,
+  'Snapchat Guidelines': Camera,
+  'Reference Examples': Film,
+  'Google Drive': FolderOpen,
+};
+
+// Expected resource titles in order
+const RESOURCE_ORDER = ['MOF Guidelines', 'Snapchat Guidelines', 'Reference Examples', 'Google Drive'];
+
 export function CreatorHub({ creatorName, assignments, onGoToAssignments }: CreatorHubProps) {
-  const { updates, bonusOpportunities, loading: resourcesLoading } = useHubResources();
+  const { updates, bonusOpportunities, resourceItems, loading: resourcesLoading } = useHubResources();
   const { upcomingDays, loading: upcomingLoading } = useUpcomingAssignments(creatorName);
+  const { isRead, markAsRead } = useUpdateReadStatus(creatorName, updates);
 
   const displayName = useMemo(() => {
     if (!creatorName) return 'Creator';
@@ -40,13 +52,37 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
     return { totalAssignments, uniqueProducts, accountCount };
   }, [assignments]);
 
-  // Resource links - Updated per requirements
-  const resources = [
-    { title: 'Filming Checklist', icon: CheckSquare, description: 'Step-by-step filming guide' },
-    { title: 'Script Templates', icon: FileText, description: 'Standard script formats' },
-    { title: 'Examples', icon: Film, description: 'Video style examples & reference accounts' },
-    { title: 'FAQ & Help', icon: HelpCircle, description: 'Common questions answered' },
-  ];
+  // Map resource items by title for easy lookup
+  const resourceMap = useMemo(() => {
+    const map: Record<string, { link: string }> = {};
+    resourceItems.forEach(item => {
+      map[item.title] = { link: item.link };
+    });
+    console.log(`Resources loaded: ${resourceItems.length} items found`);
+    return map;
+  }, [resourceItems]);
+
+  // Build ordered resources with icons
+  const orderedResources = useMemo(() => {
+    return RESOURCE_ORDER.map(title => {
+      const Icon = RESOURCE_ICONS[title] || FileText;
+      const resource = resourceMap[title];
+      return {
+        title,
+        Icon,
+        link: resource?.link || '',
+        hasLink: Boolean(resource?.link)
+      };
+    });
+  }, [resourceMap]);
+
+  // Handle update click
+  const handleUpdateClick = useCallback((update: typeof updates[0]) => {
+    markAsRead(update);
+    if (update.link) {
+      window.open(update.link, '_blank', 'noopener,noreferrer');
+    }
+  }, [markAsRead]);
 
   // Format date for display (e.g., "Jan 30")
   const formatDate = (dateStr: string): string => {
@@ -66,8 +102,8 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
         <h2 className="text-2xl font-bold text-foreground">
           Welcome back, {displayName}! 🎬
         </h2>
-        <p className="text-muted-foreground mt-2">
-          Your creator hub for everything you need
+        <p className="text-lg text-muted-foreground mt-3 italic tracking-wide leading-relaxed">
+          Your personalized workspace for assignments, resources, and updates
         </p>
       </div>
 
@@ -185,7 +221,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
           </CardContent>
         </Card>
 
-        {/* Resources Card - Updated */}
+        {/* Resources Card - Dynamic from Hub_Resources */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -196,20 +232,36 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
-              {resources.map((resource, index) => (
-                <button
-                  key={index}
-                  className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center"
-                >
-                  <resource.icon className="h-5 w-5 text-primary" />
-                  <span className="text-xs font-medium text-foreground">{resource.title}</span>
-                </button>
-              ))}
+              {orderedResources.map((resource, index) => {
+                const IconComponent = resource.Icon;
+                return resource.hasLink ? (
+                  <a
+                    key={index}
+                    href={resource.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/50 hover:bg-muted hover:scale-[1.02] hover:shadow-md transition-all duration-200 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label={`Open ${resource.title} in new tab`}
+                  >
+                    <IconComponent className="h-5 w-5 text-primary" />
+                    <span className="text-xs font-medium text-foreground">{resource.title}</span>
+                  </a>
+                ) : (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/30 text-center opacity-60 cursor-not-allowed"
+                    aria-label={`${resource.title} - not available`}
+                  >
+                    <IconComponent className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">{resource.title}</span>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
 
-        {/* Updates Card - Connected to Hub_Resources */}
+        {/* Updates Card - Connected to Hub_Resources with Read/Unread */}
         <Card className="md:col-span-2">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -226,36 +278,43 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
                 No recent updates - check back soon!
               </div>
             ) : (
-              <div className="space-y-3">
-                {updates.map((update, index) => (
-                  <div key={index} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
-                    <div className="w-2 h-2 rounded-full mt-1.5 bg-primary" />
-                    <div className="flex-1 min-w-0">
-                      {update.link ? (
-                        <a 
-                          href={update.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-foreground hover:text-primary hover:underline transition-colors"
-                        >
+              <div className="space-y-1">
+                {updates.map((update, index) => {
+                  const read = isRead(update);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleUpdateClick(update)}
+                      className="w-full flex items-start gap-3 py-3 px-2 border-b border-border/50 last:border-0 text-left hover:bg-muted/50 rounded-md transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 min-h-[44px]"
+                      aria-label={`${read ? 'Read' : 'Unread'} update: ${update.title}${update.link ? ' - opens in new tab' : ''}`}
+                    >
+                      {/* Read/Unread indicator */}
+                      <div 
+                        className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 transition-all duration-200 ${
+                          read 
+                            ? 'bg-muted-foreground/30 border border-muted-foreground/40' 
+                            : 'bg-primary'
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <div className={`flex-1 min-w-0 transition-opacity duration-200 ${read ? 'opacity-70' : ''}`}>
+                        <p className={`text-sm text-foreground ${read ? '' : 'font-medium'} ${update.link ? 'hover:text-primary hover:underline' : ''}`}>
                           {update.title}
-                        </a>
-                      ) : (
-                        <p className="text-sm font-medium text-foreground">{update.title}</p>
-                      )}
-                      {update.content && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                          {update.content}
                         </p>
-                      )}
-                      {update.date_posted && (
-                        <p className="text-xs text-muted-foreground/70 mt-1">
-                          {formatDate(update.date_posted)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                        {update.content && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {update.content}
+                          </p>
+                        )}
+                        {update.date_posted && (
+                          <p className="text-xs text-muted-foreground/70 mt-1">
+                            {formatDate(update.date_posted)}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </CardContent>

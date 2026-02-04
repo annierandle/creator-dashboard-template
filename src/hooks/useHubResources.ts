@@ -137,7 +137,10 @@ export function useHubResources() {
   // Get bonus opportunities
   const bonusOpportunities = resources.filter(r => r.type.toLowerCase() === 'bonus');
 
-  console.log(`Hub Resources: ${updates.length} updates found`);
+  // Get resource items for the Resources section
+  const resourceItems = resources.filter(r => r.type.toLowerCase() === 'resource');
 
-  return { resources, updates, bonusOpportunities, loading, error };
+  console.log(`Hub Resources: ${updates.length} updates, ${resourceItems.length} resources found`);
+
+  return { resources, updates, bonusOpportunities, resourceItems, loading, error };
 }

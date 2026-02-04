@@ -102,7 +102,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
         <h2 className="text-2xl font-bold text-foreground">
           Welcome back, {displayName}! 🎬
         </h2>
-        <p className="text-lg text-muted-foreground mt-3 italic tracking-wide leading-relaxed">
+        <p className="text-sm text-muted-foreground mt-2 italic tracking-wide">
           Your personalized workspace for assignments, resources, and updates
         </p>
       </div>
@@ -182,7 +182,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
             </div>
             <CardDescription>Optional videos for extra earnings</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             {resourcesLoading ? (
               <p className="text-sm text-muted-foreground">Loading...</p>
             ) : bonusOpportunities.length > 0 ? (
@@ -240,7 +240,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
                     href={resource.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/50 hover:bg-muted hover:scale-[1.02] hover:shadow-md transition-all duration-200 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-muted/50 hover:bg-muted hover:scale-[1.02] hover:shadow-md transition-all duration-200 text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 min-h-[80px]"
                     aria-label={`Open ${resource.title} in new tab`}
                   >
                     <IconComponent className="h-5 w-5 text-primary" />
@@ -249,7 +249,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
                 ) : (
                   <div
                     key={index}
-                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/30 text-center opacity-60 cursor-not-allowed"
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg bg-muted/30 text-center opacity-60 cursor-not-allowed min-h-[80px]"
                     aria-label={`${resource.title} - not available`}
                   >
                     <IconComponent className="h-5 w-5 text-muted-foreground" />
@@ -268,7 +268,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
               <Bell className="h-5 w-5 text-primary" />
               <CardTitle className="text-lg">Updates</CardTitle>
             </div>
-            <CardDescription>Recent announcements</CardDescription>
+            <CardDescription>Recent announcements, important updates, and other information</CardDescription>
           </CardHeader>
           <CardContent>
             {resourcesLoading ? (

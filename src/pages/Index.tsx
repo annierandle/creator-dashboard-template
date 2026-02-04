@@ -134,40 +134,38 @@ const Index = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* Assignments Tab */}
           <TabsContent value="assignments" className="mt-0">
-            {/* Personalized Welcome for Assignments */}
-            {displayName && (
-              <div className="mb-6 pb-4 border-b border-border/50">
-                <h2 className="text-xl font-bold text-foreground">
-                  Hi {displayName}! 👋
-                </h2>
-                {!loading && assignments.length > 0 && (
-                  <>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      You have {stats.totalAssignments} assignment{stats.totalAssignments !== 1 ? 's' : ''} for {stats.uniqueProducts} unique product{stats.uniqueProducts !== 1 ? 's' : ''} across {stats.accountCount} account{stats.accountCount !== 1 ? 's' : ''} today
-                    </p>
-                    
-                    {/* Filming Progress */}
-                    <div className="mt-2 flex items-center gap-2">
-                      {allFilmed ? (
-                        <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                          <CheckCircle2 className="h-4 w-4" />
-                          <span className="text-sm font-medium">
-                            All videos filmed! ✓ Ready to mark uploads complete
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <Video className="h-4 w-4" />
-                          <span className="text-sm">
-                            📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
-                          </span>
-                        </div>
-                      )}
+          {/* Assignments Header */}
+          <div className="mb-6 pb-4 border-b border-border/50">
+            <h2 className="text-2xl font-bold text-foreground">
+              My Assignments
+            </h2>
+            {!loading && assignments.length > 0 && (
+              <>
+                <p className="text-base text-muted-foreground mt-1">
+                  You have {stats.totalAssignments} total assignments today across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
+                </p>
+                
+                {/* Filming Progress */}
+                <div className="mt-2 flex items-center gap-2">
+                  {allFilmed ? (
+                    <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span className="text-xs font-medium">
+                        All videos filmed! ✓ Ready to mark uploads complete
+                      </span>
                     </div>
-                  </>
-                )}
-              </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Video className="h-3.5 w-3.5" />
+                      <span className="text-xs">
+                        📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
+          </div>
 
             {loading ? (
               <LoadingSkeleton />

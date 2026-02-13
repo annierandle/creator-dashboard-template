@@ -14,9 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('hub');
+  const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
   const [searchParams] = useSearchParams();
   const creatorId = searchParams.get('creator_id');
-  const { assignments, loading, error, refetch } = useAssignments(creatorId);
+  const { assignments, yesterdayAssignments, loading, error, refetch } = useAssignments(creatorId);
   
   // Filming progress tracking
   const { isFilmed, toggleFilmed, filmedCount, allFilmed } = useFilmingProgress(
@@ -40,23 +41,23 @@ const Index = () => {
     refetch();
   }, [refetch]);
 
+  // Active assignments based on day toggle
+  const activeAssignments = dayView === 'today' ? assignments : yesterdayAssignments;
+
   // Calculate enhanced statistics
   const stats = useMemo(() => {
-    const totalAssignments = assignments.length;
-    const uniqueProducts = new Set(assignments.map(a => a['product_name'])).size;
-    const accountCount = new Set(assignments.map(a => a['account_name'])).size;
-    
-    console.log('Stats calculated:', { totalAssignments, uniqueProducts, accountCount });
-    
+    const totalAssignments = activeAssignments.length;
+    const uniqueProducts = new Set(activeAssignments.map(a => a['product_name'])).size;
+    const accountCount = new Set(activeAssignments.map(a => a['account_name'])).size;
     return { totalAssignments, uniqueProducts, accountCount };
-  }, [assignments]);
+  }, [activeAssignments]);
 
   // Group assignments by account_name with global indices
   const { groupedAssignments, globalIndicesMap } = useMemo(() => {
     const groups: Record<string, Assignment[]> = {};
     const indices: Record<string, number[]> = {};
     
-    assignments.forEach((assignment, globalIndex) => {
+    activeAssignments.forEach((assignment, globalIndex) => {
       const accountName = assignment['account_name'] || 'Unknown';
       if (!groups[accountName]) {
         groups[accountName] = [];
@@ -67,7 +68,7 @@ const Index = () => {
     });
     
     return { groupedAssignments: groups, globalIndicesMap: indices };
-  }, [assignments]);
+  }, [activeAssignments]);
 
   // Sort account names for consistent display
   const sortedAccountNames = useMemo(() => {
@@ -134,35 +135,55 @@ const Index = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* Assignments Tab */}
           <TabsContent value="assignments" className="mt-0">
+          {/* Day Toggle */}
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={dayView === 'today' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDayView('today')}
+            >
+              Today
+            </Button>
+            <Button
+              variant={dayView === 'yesterday' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDayView('yesterday')}
+            >
+              Yesterday
+            </Button>
+          </div>
+
           {/* Assignments Header */}
           <div className="mb-6 pb-4 border-b border-border/50">
             <h2 className="text-2xl font-bold text-foreground">
-              My Assignments
+              {dayView === 'today' ? 'My Assignments' : "Yesterday's Assignments"}
             </h2>
-            {!loading && assignments.length > 0 && (
+            {!loading && activeAssignments.length > 0 && (
               <>
               <p className="text-sm text-muted-foreground mt-1">
-                  You have {stats.totalAssignments} total assignments today across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
+                  You have {stats.totalAssignments} total assignments {dayView === 'today' ? 'today' : 'from yesterday'} across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
                 </p>
                 
-                {/* Filming Progress */}
-                <div className="mt-2 flex items-center gap-2">
-                  {allFilmed ? (
-                    <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span className="text-xs font-medium">
-                        All videos filmed! ✓ Ready to mark uploads complete
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Video className="h-3.5 w-3.5" />
-                      <span className="text-xs">
-                        📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {/* Filming Progress - only show for today */}
+                {dayView === 'today' && (
+                  <div className="mt-2 flex items-center gap-2">
+                    {allFilmed ? (
+                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">
+                          All videos filmed! ✓ Ready to mark uploads complete
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Video className="h-3.5 w-3.5" />
+                        <span className="text-xs">
+                          📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -171,8 +192,20 @@ const Index = () => {
               <LoadingSkeleton />
             ) : error ? (
               <ErrorState message={error} />
-            ) : assignments.length === 0 ? (
-              <EmptyState creatorId={creatorId} />
+            ) : activeAssignments.length === 0 ? (
+              dayView === 'yesterday' ? (
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                  <div className="rounded-full bg-primary/10 p-4 mb-4">
+                    <CalendarDays className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No assignments yesterday</h3>
+                  <p className="text-muted-foreground text-sm max-w-xs">
+                    There were no assignments scheduled for yesterday.
+                  </p>
+                </div>
+              ) : (
+                <EmptyState creatorId={creatorId} />
+              )
             ) : (
               <div>
                 {/* Account Groups */}
@@ -189,8 +222,8 @@ const Index = () => {
                   ))}
                 </div>
 
-                {/* Completion Button */}
-                <CompletionButton creatorId={creatorId} />
+                {/* Completion Button - only for today */}
+                {dayView === 'today' && <CompletionButton creatorId={creatorId} />}
               </div>
             )}
           </TabsContent>

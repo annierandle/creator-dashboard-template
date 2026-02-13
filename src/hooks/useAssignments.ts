@@ -101,6 +101,7 @@ function parseCSV(csvText: string): Assignment[] {
 
 export function useAssignments(creatorId: string | null) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [yesterdayAssignments, setYesterdayAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -135,35 +136,39 @@ export function useAssignments(creatorId: string | null) {
         const todayPST = new Date().toLocaleDateString('en-CA', {
           timeZone: 'America/Los_Angeles'
         });
+        
+        // Get yesterday's date in PST timezone
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterdayPST = yesterdayDate.toLocaleDateString('en-CA', {
+          timeZone: 'America/Los_Angeles'
+        });
+        
         console.log('Today in PST:', todayPST);
+        console.log('Yesterday in PST:', yesterdayPST);
 
         // Normalize creator ID for comparison
         const normalizedCreatorId = (creatorId || '').trim().toLowerCase();
         console.log('Looking for creator:', normalizedCreatorId);
 
-        // Filter assignments for today and this creator
-        const todaysAssignments = allRows.filter(row => {
-          const rowDate = String(row['date_pst'] || '')
-            .trim()
-            .replace(/[\r\n\t]+/g, '');
+        const filterByDate = (rows: Assignment[], targetDate: string) => {
+          return rows.filter(row => {
+            const rowDate = String(row['date_pst'] || '').trim().replace(/[\r\n\t]+/g, '');
+            const rowCreatorId = String(row['creator_id'] || '').trim().toLowerCase().replace(/[\r\n\t]+/g, '');
+            const dateMatch = rowDate === targetDate;
+            const creatorMatch = normalizedCreatorId === '' || rowCreatorId === normalizedCreatorId;
+            return dateMatch && creatorMatch;
+          });
+        };
 
-          const rowCreatorId = String(row['creator_id'] || '')
-            .trim()
-            .toLowerCase()
-            .replace(/[\r\n\t]+/g, '');
+        const todaysAssignments = filterByDate(allRows, todayPST);
+        const yesterdaysAssignments = filterByDate(allRows, yesterdayPST);
 
-          const dateMatch = rowDate === todayPST;
-          const creatorMatch = normalizedCreatorId === '' || rowCreatorId === normalizedCreatorId;
-
-          console.log(`Row check: date="${rowDate}" creator="${rowCreatorId}" → dateMatch=${dateMatch} creatorMatch=${creatorMatch}`);
-
-          return dateMatch && creatorMatch;
-        });
-
-        console.log('Filtered assignments count:', todaysAssignments.length);
-        console.log('Final assignments:', todaysAssignments);
+        console.log('Today assignments:', todaysAssignments.length);
+        console.log('Yesterday assignments:', yesterdaysAssignments.length);
 
         setAssignments(todaysAssignments);
+        setYesterdayAssignments(yesterdaysAssignments);
       } catch (err: any) {
         console.error('Error loading assignments:', err);
         setError(err.message || 'Failed to load assignments');
@@ -175,5 +180,5 @@ export function useAssignments(creatorId: string | null) {
     fetchAssignments();
   }, [creatorId, refreshKey]);
 
-  return { assignments, loading, error, refetch };
+  return { assignments, yesterdayAssignments, loading, error, refetch };
 }

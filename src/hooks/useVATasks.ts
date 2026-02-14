@@ -1,0 +1,240 @@
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { VATask } from '@/types/va-task';
+
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=VA_TASKS_GID&single=true&output=csv';
+
+// We need to find the correct GID for VA_Tasks tab
+// For now, use a separate function to try fetching
+const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub';
+
+// Known GIDs to try for VA_Tasks tab
+const VA_TASKS_GIDS = ['1234567890', '0']; // Will be discovered
+
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '\"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function parseVACSV(csvText: string): VATask[] {
+  const lines = csvText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  if (lines.length < 2) {
+    console.warn('VA CSV has insufficient lines');
+    return [];
+  }
+
+  // Find header row containing 'va_id'
+  const headerRowIndex = lines.findIndex(line =>
+    line.toLowerCase().includes('va_id')
+  );
+
+  if (headerRowIndex === -1) {
+    console.warn('Could not find VA_Tasks header row containing \"va_id\"');
+    return [];
+  }
+
+  const headers = parseCsvLine(lines[headerRowIndex])
+    .map(h => h.toLowerCase().replace(/['"]+/g, '').trim());
+
+  console.log('VA Tasks headers:', headers);
+
+  const rows: VATask[] = [];
+  for (let i = headerRowIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.replace(/,/g, '').trim().length === 0) continue;
+
+    const values = parseCsvLine(line);
+    const row: VATask = {} as VATask;
+
+    headers.forEach((header, index) => {
+      let value = values[index] || '';
+      value = value.replace(/^"|"$/g, '').replace(/[\r\n\t]+/g, '').trim();
+      row[header] = value;
+    });
+
+    if (row['date_pst'] && row['va_id']) {
+      rows.push(row);
+    }
+  }
+
+  return rows;
+}
+
+function getTodayPST(): string {
+  return new Date().toLocaleDateString('en-CA', {
+    timeZone: 'America/Los_Angeles'
+  });
+}
+
+export function useVATasks(vaId: string | null) {
+  const [tasks, setTasks] = useState<VATask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = useCallback(() => setRefreshKey(prev => prev + 1), []);
+
+  useEffect(() => {
+    async function fetchTasks() {
+      if (!vaId) {
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        console.log('=== VA TASKS LOADING ===');
+        console.log('VA ID:', vaId);
+
+        // Try multiple GIDs to find VA_Tasks tab
+        const gidsToTry = ['1891638858', '0', '528090500', '1020515194'];
+        let csvText = '';
+        let found = false;
+
+        for (const gid of gidsToTry) {
+          try {
+            const url = `${SHEET_BASE}?gid=${gid}&single=true&output=csv&cachebust=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) continue;
+            
+            const text = await response.text();
+            if (text.toLowerCase().includes('va_id')) {
+              csvText = text;
+              found = true;
+              console.log(`✅ Found VA_Tasks tab at gid=${gid}`);
+              break;
+            }
+          } catch {
+            continue;
+          }
+        }
+
+        if (!found) {
+          console.warn('VA_Tasks tab not found in any known GID. Showing empty state.');
+          setTasks([]);
+          setLoading(false);
+          return;
+        }
+
+        const allRows = parseVACSV(csvText);
+        const todayPST = getTodayPST();
+        const normalizedVaId = vaId.trim().toLowerCase();
+
+        const filtered = allRows.filter(row => {
+          const rowDate = String(row['date_pst'] || '').trim();
+          const rowVaId = String(row['va_id'] || '').trim().toLowerCase();
+          return rowDate === todayPST && rowVaId === normalizedVaId;
+        });
+
+        // Sort by posting_order
+        filtered.sort((a, b) => {
+          const orderA = parseInt(a['posting_order'] || '999', 10);
+          const orderB = parseInt(b['posting_order'] || '999', 10);
+          return orderA - orderB;
+        });
+
+        const vaName = filtered[0]?.['va_name'] || vaId;
+        console.log(`VA Tasks loaded: ${filtered.length} tasks found for ${vaName}`);
+
+        setTasks(filtered);
+      } catch (err: any) {
+        console.error('Error loading VA tasks:', err);
+        setError(err.message || 'Failed to load VA tasks');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTasks();
+  }, [vaId, refreshKey]);
+
+  return { tasks, loading, error, refetch };
+}
+
+export function useVAPostingProgress(vaId: string | null, totalTasks: number) {
+  const [postedSet, setPostedSet] = useState<Set<string>>(new Set());
+  const todayDate = getTodayPST();
+
+  // Clean old entries on mount (keep last 7 days)
+  useEffect(() => {
+    try {
+      const keys = Object.keys(localStorage);
+      const vaKeys = keys.filter(k => k.startsWith('va_posted_'));
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const cutoff = sevenDaysAgo.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+      
+      vaKeys.forEach(key => {
+        const parts = key.split('_');
+        // va_posted_{vaId}_{date}_{order}
+        const datepart = parts[3] || '';
+        if (datepart < cutoff) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.warn('localStorage cleanup error:', e);
+    }
+  }, []);
+
+  // Load state
+  useEffect(() => {
+    const posted = new Set<string>();
+    for (let i = 0; i < totalTasks; i++) {
+      const key = `va_posted_${vaId}_${todayDate}_${i}`;
+      try {
+        if (localStorage.getItem(key) === 'true') {
+          posted.add(String(i));
+        }
+      } catch (e) { /* ignore */ }
+    }
+    setPostedSet(posted);
+  }, [vaId, todayDate, totalTasks]);
+
+  const isPosted = useCallback((index: number): boolean => {
+    return postedSet.has(String(index));
+  }, [postedSet]);
+
+  const togglePosted = useCallback((index: number) => {
+    const key = `va_posted_${vaId}_${todayDate}_${index}`;
+    const indexStr = String(index);
+
+    setPostedSet(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(indexStr)) {
+        newSet.delete(indexStr);
+        try { localStorage.removeItem(key); } catch {}
+      } else {
+        newSet.add(indexStr);
+        try { localStorage.setItem(key, 'true'); } catch {}
+      }
+      return newSet;
+    });
+  }, [vaId, todayDate]);
+
+  const postedCount = postedSet.size;
+  const allPosted = totalTasks > 0 && postedCount === totalTasks;
+
+  return { isPosted, togglePosted, postedCount, allPosted };
+}

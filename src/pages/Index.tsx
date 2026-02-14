@@ -7,19 +7,44 @@ import { CompletionButton } from '@/components/CompletionButton';
 import { EmptyState, ErrorState } from '@/components/EmptyState';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { CreatorHub } from '@/components/CreatorHub';
+import { RoleLandingPage } from '@/components/RoleLandingPage';
+import { VADashboard } from '@/components/VADashboard';
 import { CalendarDays, RefreshCw, Video, CheckCircle2, LayoutGrid, ClipboardList } from 'lucide-react';
 import { Assignment } from '@/types/assignment';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const role = searchParams.get('role');
+  const id = searchParams.get('id');
+  const creatorId = searchParams.get('creator_id') || (role === 'creator' ? id : null);
+  const vaId = role === 'va' ? id : null;
+
+  // Determine which view to show
+  // Backward compat: ?creator_id=xxx still works
+  const isCreator = role === 'creator' || !!searchParams.get('creator_id');
+  const isVA = role === 'va' && !!vaId;
+  const showLanding = !isCreator && !isVA;
+
+  if (showLanding) {
+    return <RoleLandingPage />;
+  }
+
+  if (isVA && vaId) {
+    return <VADashboard vaId={vaId} />;
+  }
+
+  // Creator dashboard (existing logic preserved 100%)
+  return <CreatorDashboard creatorId={creatorId} />;
+};
+
+// Extracted existing creator dashboard into its own component
+function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
   const [activeTab, setActiveTab] = useState('hub');
   const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
-  const [searchParams] = useSearchParams();
-  const creatorId = searchParams.get('creator_id');
   const { assignments, yesterdayAssignments, loading, error, refetch } = useAssignments(creatorId);
   
-  // Filming progress tracking
   const { isFilmed, toggleFilmed, filmedCount, allFilmed } = useFilmingProgress(
     creatorId, 
     assignments.length
@@ -31,7 +56,6 @@ const Index = () => {
     day: 'numeric',
   });
 
-  // Capitalize creator name for display
   const displayName = useMemo(() => {
     if (!creatorId) return null;
     return creatorId.charAt(0).toUpperCase() + creatorId.slice(1).toLowerCase();
@@ -41,10 +65,8 @@ const Index = () => {
     refetch();
   }, [refetch]);
 
-  // Active assignments based on day toggle
   const activeAssignments = dayView === 'today' ? assignments : yesterdayAssignments;
 
-  // Calculate enhanced statistics
   const stats = useMemo(() => {
     const totalAssignments = activeAssignments.length;
     const uniqueProducts = new Set(activeAssignments.map(a => a['product_name'])).size;
@@ -52,7 +74,6 @@ const Index = () => {
     return { totalAssignments, uniqueProducts, accountCount };
   }, [activeAssignments]);
 
-  // Group assignments by account_name with global indices
   const { groupedAssignments, globalIndicesMap } = useMemo(() => {
     const groups: Record<string, Assignment[]> = {};
     const indices: Record<string, number[]> = {};
@@ -70,10 +91,8 @@ const Index = () => {
     return { groupedAssignments: groups, globalIndicesMap: indices };
   }, [activeAssignments]);
 
-  // Sort account names for consistent display
   const sortedAccountNames = useMemo(() => {
     return Object.keys(groupedAssignments).sort((a, b) => {
-      // Try numeric sort if both are numbers
       const numA = parseInt(a, 10);
       const numB = parseInt(b, 10);
       if (!isNaN(numA) && !isNaN(numB)) {
@@ -89,7 +108,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -112,7 +130,6 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Tab Navigation */}
           <div className="mt-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
@@ -130,63 +147,58 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container max-w-2xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* Assignments Tab */}
           <TabsContent value="assignments" className="mt-0">
-          {/* Day Toggle */}
-          <div className="flex gap-2 mb-4">
-            <Button
-              variant={dayView === 'today' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setDayView('today')}
-            >
-              Today
-            </Button>
-            <Button
-              variant={dayView === 'yesterday' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setDayView('yesterday')}
-            >
-              Yesterday
-            </Button>
-          </div>
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant={dayView === 'today' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDayView('today')}
+              >
+                Today
+              </Button>
+              <Button
+                variant={dayView === 'yesterday' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDayView('yesterday')}
+              >
+                Yesterday
+              </Button>
+            </div>
 
-          {/* Assignments Header */}
-          <div className="mb-6 pb-4 border-b border-border/50">
-            <h2 className="text-2xl font-bold text-foreground">
-              {dayView === 'today' ? 'My Assignments' : "Yesterday's Assignments"}
-            </h2>
-            {!loading && activeAssignments.length > 0 && (
-              <>
-              <p className="text-sm text-muted-foreground mt-1">
-                  You have {stats.totalAssignments} total assignments {dayView === 'today' ? 'today' : 'from yesterday'} across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
-                </p>
-                
-                {/* Filming Progress - only show for today */}
-                {dayView === 'today' && (
-                  <div className="mt-2 flex items-center gap-2">
-                    {allFilmed ? (
-                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium">
-                          All videos filmed! ✓ Ready to mark uploads complete
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Video className="h-3.5 w-3.5" />
-                        <span className="text-xs">
-                          📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+            <div className="mb-6 pb-4 border-b border-border/50">
+              <h2 className="text-2xl font-bold text-foreground">
+                {dayView === 'today' ? 'My Assignments' : "Yesterday's Assignments"}
+              </h2>
+              {!loading && activeAssignments.length > 0 && (
+                <>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You have {stats.totalAssignments} total assignments {dayView === 'today' ? 'today' : 'from yesterday'} across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
+                  </p>
+                  
+                  {dayView === 'today' && (
+                    <div className="mt-2 flex items-center gap-2">
+                      {allFilmed ? (
+                        <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span className="text-xs font-medium">
+                            All videos filmed! ✓ Ready to mark uploads complete
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Video className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            📹 Filming progress: {filmedCount} of {stats.totalAssignments} completed
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             {loading ? (
               <LoadingSkeleton />
@@ -208,7 +220,6 @@ const Index = () => {
               )
             ) : (
               <div>
-                {/* Account Groups */}
                 <div className="space-y-6">
                   {sortedAccountNames.map((accountName) => (
                     <AccountGroup
@@ -222,13 +233,11 @@ const Index = () => {
                   ))}
                 </div>
 
-                {/* Completion Button - only for today */}
                 {dayView === 'today' && <CompletionButton creatorId={creatorId} />}
               </div>
             )}
           </TabsContent>
 
-          {/* Hub Tab */}
           <TabsContent value="hub" className="mt-0">
             <CreatorHub 
               creatorName={creatorId}
@@ -240,6 +249,6 @@ const Index = () => {
       </main>
     </div>
   );
-};
+}
 
 export default Index;

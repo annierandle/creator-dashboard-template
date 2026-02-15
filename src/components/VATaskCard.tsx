@@ -51,7 +51,7 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted 
   const productLink = task['product_link'] || '';
   const videoFileLink = task['video_file_link'] || '';
   const postingDate = task['posting_date'] || '';
-  const vaStatus = task['va_status'] || 'pending';
+  const vaStatus = isPosted ? 'Posted' : (task['va_status'] || task['VA_status'] || 'pending');
 
   const todayPST = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
   const isPostingToday = !postingDate || postingDate === todayPST;
@@ -113,21 +113,21 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted 
             )}
           </div>
 
-          {/* Creator & Product */}
-          <div className="text-xs text-muted-foreground space-y-0.5">
-            {creatorName && <p>Creator: {creatorName}</p>}
+          {/* Product & Creator */}
+          <div className="space-y-0.5">
             {productLink ? (
               <a
                 href={productLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-sm font-medium text-primary hover:underline"
               >
                 {productName}
               </a>
             ) : (
-              <p>{productName}</p>
+              <p className="text-sm font-medium text-foreground">{productName}</p>
             )}
+            {creatorName && <p className="text-[11px] text-muted-foreground">Creator: {creatorName}</p>}
           </div>
 
           {/* Caption with inline copy */}

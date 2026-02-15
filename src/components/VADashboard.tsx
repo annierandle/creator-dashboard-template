@@ -64,7 +64,7 @@ export function VADashboard({ vaId }: VADashboardProps) {
             <div>
               <div className="flex items-center gap-2">
                 <Smartphone className="h-5 w-5 text-primary" />
-                <h1 className="text-xl font-bold text-foreground">📱 VA Dashboard</h1>
+                <h1 className="text-xl font-bold text-foreground">VA Dashboard</h1>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                 <CalendarDays className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export function VADashboard({ vaId }: VADashboardProps) {
         {/* Greeting & Progress */}
         <div className="mb-6 pb-4 border-b border-border/50">
           <h2 className="text-2xl font-bold text-foreground">
-            Hi {vaName}! 🚀
+            Hi {vaName}!
           </h2>
           {!loading && tasks.length > 0 && (
             <>

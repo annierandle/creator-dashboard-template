@@ -23,11 +23,32 @@ function parseCsvLine(line: string): string[] {
   return result;
 }
 
+function splitCsvIntoRows(csvText: string): string[] {
+  const rows: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      current += char;
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && csvText[i + 1] === '\n') i++; // skip \r\n
+      const trimmed = current.trim();
+      if (trimmed.length > 0) rows.push(trimmed);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  const trimmed = current.trim();
+  if (trimmed.length > 0) rows.push(trimmed);
+  return rows;
+}
+
 function parseVACSV(csvText: string): VATask[] {
-  const lines = csvText
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
+  const lines = splitCsvIntoRows(csvText);
 
   if (lines.length < 2) {
     console.warn('VA CSV has insufficient lines');
@@ -62,6 +83,8 @@ function parseVACSV(csvText: string): VATask[] {
       value = value.replace(/^"|"$/g, '').replace(/[\r\n\t]+/g, '').trim();
       row[header] = value;
     });
+
+
 
     if (row['date_pst'] && row['va_id']) {
       rows.push(row);

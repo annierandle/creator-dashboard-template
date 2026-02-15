@@ -1,16 +1,16 @@
 import { useState, useCallback } from 'react';
 import { VATask } from '@/types/va-task';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Copy, ExternalLink, Download, Check } from 'lucide-react';
+import { Copy, Check, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface VATaskCardProps {
   task: VATask;
   index: number;
+  videoNumber: number;
   isPosted: boolean;
   onTogglePosted: (index: number) => void;
 }
@@ -42,34 +42,28 @@ function formatPostingDate(dateStr: string): string {
   }
 }
 
-export function VATaskCard({ task, index, isPosted, onTogglePosted }: VATaskCardProps) {
+export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted }: VATaskCardProps) {
   const [copied, setCopied] = useState(false);
 
   const productName = task['product_name'] || 'Untitled Product';
   const creatorName = task['creator_name'] || '';
-  const accountName = task['account_name'] || '';
   const captionText = task['caption_text'] || '';
   const productLink = task['product_link'] || '';
   const videoFileLink = task['video_file_link'] || '';
   const postingDate = task['posting_date'] || '';
   const vaStatus = task['va_status'] || 'pending';
-  const postingOrder = task['posting_order'] || '';
 
   const todayPST = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
   const isPostingToday = !postingDate || postingDate === todayPST;
 
   const handleCopyCaption = useCallback(async () => {
     if (!captionText) return;
-
     try {
       await navigator.clipboard.writeText(captionText);
       setCopied(true);
-      toast({
-        title: '✓ Caption copied to clipboard!',
-      });
+      toast({ title: '✓ Caption copied!' });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for older browsers
       try {
         const textarea = document.createElement('textarea');
         textarea.value = captionText;
@@ -80,14 +74,10 @@ export function VATaskCard({ task, index, isPosted, onTogglePosted }: VATaskCard
         document.execCommand('copy');
         document.body.removeChild(textarea);
         setCopied(true);
-        toast({ title: '✓ Caption copied to clipboard!' });
+        toast({ title: '✓ Caption copied!' });
         setTimeout(() => setCopied(false), 2000);
       } catch {
-        toast({
-          title: 'Failed to copy caption',
-          description: 'Please select and copy the text manually.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Failed to copy', variant: 'destructive' });
       }
     }
   }, [captionText]);
@@ -95,108 +85,81 @@ export function VATaskCard({ task, index, isPosted, onTogglePosted }: VATaskCard
   return (
     <Card
       className={cn(
-        'relative overflow-hidden transition-all duration-200 hover:shadow-lg',
+        'transition-all duration-200',
         isPosted && 'opacity-60 bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
       )}
     >
-      {/* Posting Order Badge */}
-      {postingOrder && (
-        <div className="absolute top-3 right-3 z-10">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-md">
-            <span className="text-sm font-bold text-primary-foreground">#{postingOrder}</span>
-          </div>
-        </div>
-      )}
-
-      <div className="flex">
-        {/* Checkbox Column */}
-        <div className="flex items-start justify-center px-3 py-5 border-r border-border/50">
-          <Checkbox
-            checked={isPosted}
-            onCheckedChange={() => onTogglePosted(index)}
-            className="h-8 w-8 rounded-md border-2 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-            aria-label={`Mark ${productName} as posted`}
-          />
-        </div>
+      <div className="flex items-start gap-3 p-3">
+        {/* Checkbox */}
+        <Checkbox
+          checked={isPosted}
+          onCheckedChange={() => onTogglePosted(index)}
+          className="mt-1 h-5 w-5 rounded border-2 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+          aria-label={`Mark Video #${videoNumber} as posted`}
+        />
 
         {/* Content */}
-        <div className="flex-1 min-w-0">
-          <CardHeader className="pb-2 pr-14">
-            <CardTitle className="text-xl font-semibold leading-tight">{productName}</CardTitle>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-              {creatorName && <span>By {creatorName}</span>}
-              {creatorName && accountName && <span>•</span>}
-              {accountName && <span>{accountName}</span>}
-            </div>
-            {!isPostingToday && (
-              <p className="text-xs text-primary font-medium mt-1">
-                Post on: {formatPostingDate(postingDate)}
-              </p>
-            )}
-          </CardHeader>
-
-          <CardContent className="space-y-3 pt-0">
-            {/* Status Badge */}
-            <Badge variant="outline" className={cn('text-xs', getStatusColor(vaStatus))}>
+        <div className="flex-1 min-w-0 space-y-2">
+          {/* Title row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm text-foreground">Video #{videoNumber}</span>
+            <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getStatusColor(vaStatus))}>
               {vaStatus}
             </Badge>
-
-            {/* Caption Section */}
-            {captionText && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">📝 Caption to Copy</p>
-                <div className="border border-border rounded-md bg-muted/30 p-3 max-h-[150px] overflow-y-auto">
-                  <p className="text-sm whitespace-pre-wrap text-foreground">{captionText}</p>
-                </div>
-                <Button
-                  onClick={handleCopyCaption}
-                  variant={copied ? 'outline' : 'default'}
-                  size="sm"
-                  className="w-full gap-2 min-h-[44px]"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4" />
-                      📋 Copy Caption
-                    </>
-                  )}
-                </Button>
-              </div>
+            {!isPostingToday && (
+              <span className="text-[10px] text-primary font-medium">
+                Post on: {formatPostingDate(postingDate)}
+              </span>
             )}
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-2">
-              {productLink && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 min-h-[44px]"
-                  onClick={() => window.open(productLink, '_blank', 'noopener,noreferrer')}
-                  aria-label="Open TikTok Shop Product"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  🔗 Open TikTok Shop Product
-                </Button>
-              )}
-              {videoFileLink && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 min-h-[44px]"
-                  onClick={() => window.open(videoFileLink, '_blank', 'noopener,noreferrer')}
-                  aria-label="Download Video"
-                >
-                  <Download className="h-4 w-4" />
-                  📥 Download Video
-                </Button>
-              )}
+          {/* Creator & Product */}
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            {creatorName && <p>Creator: {creatorName}</p>}
+            {productLink ? (
+              <a
+                href={productLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {productName}
+              </a>
+            ) : (
+              <p>{productName}</p>
+            )}
+          </div>
+
+          {/* Caption with inline copy */}
+          {captionText && (
+            <div className="flex items-start gap-2 border border-border rounded bg-muted/30 p-2">
+              <p className="text-xs whitespace-pre-wrap text-foreground flex-1 max-h-[80px] overflow-y-auto">{captionText}</p>
+              <button
+                onClick={handleCopyCaption}
+                className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
+                aria-label="Copy caption"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+              </button>
             </div>
-          </CardContent>
+          )}
+
+          {/* Video download */}
+          {videoFileLink && (
+            <a
+              href={videoFileLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <Download className="h-3 w-3" />
+              Download Video
+            </a>
+          )}
         </div>
       </div>
     </Card>

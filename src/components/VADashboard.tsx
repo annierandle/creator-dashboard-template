@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useVATasks, useVAPostingProgress } from '@/hooks/useVATasks';
-import { VATaskCard } from '@/components/VATaskCard';
+import { VAAccountGroup } from '@/components/VAAccountGroup';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,7 +31,6 @@ export function VADashboard({ vaId }: VADashboardProps) {
     return vaId.charAt(0).toUpperCase() + vaId.slice(1).toLowerCase();
   }, [tasks, vaId]);
 
-  // Unique filter values
   const accountNames = useMemo(() => {
     const names = new Set(tasks.map(t => t['account_name']).filter(Boolean));
     return Array.from(names).sort();
@@ -42,7 +41,6 @@ export function VADashboard({ vaId }: VADashboardProps) {
     return Array.from(names).sort();
   }, [tasks]);
 
-  // Filtered tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       if (accountFilter !== 'all' && task['account_name'] !== accountFilter) return false;
@@ -51,9 +49,29 @@ export function VADashboard({ vaId }: VADashboardProps) {
     });
   }, [tasks, accountFilter, creatorFilter]);
 
-  const handleRefresh = useCallback(() => refetch(), [refetch]);
+  // Group filtered tasks by account
+  const accountGroups = useMemo(() => {
+    const groups: Record<string, { tasks: typeof filteredTasks; globalIndices: number[]; videoNumbers: number[] }> = {};
+    let videoCounter = 1;
 
-  const completedAll = tasks.length > 0 && postedCount === tasks.length;
+    filteredTasks.forEach(task => {
+      const originalIndex = tasks.indexOf(task);
+      const account = task['account_name'] || 'Unknown';
+      if (!groups[account]) {
+        groups[account] = { tasks: [], globalIndices: [], videoNumbers: [] };
+      }
+      groups[account].tasks.push(task);
+      groups[account].globalIndices.push(originalIndex);
+      groups[account].videoNumbers.push(videoCounter);
+      videoCounter++;
+    });
+
+    return groups;
+  }, [filteredTasks, tasks]);
+
+  const accountCount = accountNames.length;
+
+  const handleRefresh = useCallback(() => refetch(), [refetch]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,13 +113,13 @@ export function VADashboard({ vaId }: VADashboardProps) {
           {!loading && tasks.length > 0 && (
             <>
               <p className="text-sm text-muted-foreground mt-1">
-                You have {tasks.length} video{tasks.length !== 1 ? 's' : ''} to post today
+                You have {tasks.length} video{tasks.length !== 1 ? 's' : ''} to post today across {accountCount} account{accountCount !== 1 ? 's' : ''}
               </p>
               <div className="mt-2 flex items-center gap-2">
                 {allPosted ? (
                   <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span className="text-xs font-medium">All done for today! Excellent work! ✨</span>
+                    <span className="text-xs font-medium">All done for today! Excellent work!</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -159,7 +177,7 @@ export function VADashboard({ vaId }: VADashboardProps) {
             <div className="rounded-full bg-primary/10 p-4 mb-4">
               <Smartphone className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No videos to post today! 🎉</h3>
+            <h3 className="text-lg font-semibold mb-2">No videos to post today!</h3>
             <p className="text-muted-foreground text-sm max-w-xs">
               Check back tomorrow for new posting tasks.
             </p>
@@ -177,20 +195,18 @@ export function VADashboard({ vaId }: VADashboardProps) {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredTasks.map((task, index) => {
-              // Find original index for localStorage key consistency
-              const originalIndex = tasks.indexOf(task);
-              return (
-                <VATaskCard
-                  key={`${task['posting_order']}-${index}`}
-                  task={task}
-                  index={originalIndex}
-                  isPosted={isPosted(originalIndex)}
-                  onTogglePosted={togglePosted}
-                />
-              );
-            })}
+          <div className="space-y-6">
+            {Object.entries(accountGroups).map(([account, group]) => (
+              <VAAccountGroup
+                key={account}
+                accountName={account}
+                tasks={group.tasks}
+                globalIndices={group.globalIndices}
+                videoNumbers={group.videoNumbers}
+                isPosted={isPosted}
+                onTogglePosted={togglePosted}
+              />
+            ))}
           </div>
         )}
       </main>

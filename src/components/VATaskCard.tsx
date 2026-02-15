@@ -109,11 +109,6 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted 
           {/* Title row */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm text-foreground">Video #{videoNumber}</span>
-            {postingOrder && (
-              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
-                {postingOrder}
-              </span>
-            )}
             <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getStatusColor(vaStatus))}>
               {vaStatus}
             </Badge>

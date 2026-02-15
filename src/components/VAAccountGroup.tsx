@@ -23,7 +23,7 @@ export function VAAccountGroup({
       <div className="px-1 py-1.5">
         <h3 className="font-bold text-sm text-foreground">{accountName}</h3>
         <p className="text-xs text-muted-foreground">
-          {tasks.length} video{tasks.length !== 1 ? 's' : ''}
+          {tasks.length} video{tasks.length !== 1 ? 's' : ''} · Post in order from top to bottom ↓
         </p>
       </div>
       <div className="space-y-2">

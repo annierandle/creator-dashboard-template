@@ -1,14 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { VATask } from '@/types/va-task';
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=VA_TASKS_GID&single=true&output=csv';
-
-// We need to find the correct GID for VA_Tasks tab
-// For now, use a separate function to try fetching
-const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub';
-
-// Known GIDs to try for VA_Tasks tab
-const VA_TASKS_GIDS = ['1234567890', '0']; // Will be discovered
+const VA_TASKS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=711470626&single=true&output=csv';
 
 function parseCsvLine(line: string): string[] {
   const result: string[] = [];
@@ -107,37 +100,27 @@ export function useVATasks(vaId: string | null) {
         console.log('=== VA TASKS LOADING ===');
         console.log('VA ID:', vaId);
 
-        // Try multiple GIDs to find VA_Tasks tab
-        const gidsToTry = ['1891638858', '0', '528090500', '1020515194'];
-        let csvText = '';
-        let found = false;
+        const url = `${VA_TASKS_CSV_URL}&cachebust=${Date.now()}`;
+        console.log('VA_Tasks CSV URL:', url);
 
-        for (const gid of gidsToTry) {
-          try {
-            const url = `${SHEET_BASE}?gid=${gid}&single=true&output=csv&cachebust=${Date.now()}`;
-            const response = await fetch(url, { cache: 'no-store' });
-            if (!response.ok) continue;
-            
-            const text = await response.text();
-            if (text.toLowerCase().includes('va_id')) {
-              csvText = text;
-              found = true;
-              console.log(`✅ Found VA_Tasks tab at gid=${gid}`);
-              break;
-            }
-          } catch {
-            continue;
-          }
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) {
+          console.warn('VA_Tasks fetch failed with status:', response.status);
+          setTasks([]);
+          setLoading(false);
+          return;
         }
 
-        if (!found) {
-          console.warn('VA_Tasks tab not found in any known GID. Showing empty state.');
+        const csvText = await response.text();
+        if (!csvText.toLowerCase().includes('va_id')) {
+          console.warn('VA_Tasks tab does not contain expected headers.');
           setTasks([]);
           setLoading(false);
           return;
         }
 
         const allRows = parseVACSV(csvText);
+        console.log(`VA_Tasks data fetched: ${allRows.length} rows`);
         const todayPST = getTodayPST();
         const normalizedVaId = vaId.trim().toLowerCase();
 
@@ -153,6 +136,8 @@ export function useVATasks(vaId: string | null) {
           const orderB = parseInt(b['posting_order'] || '999', 10);
           return orderA - orderB;
         });
+
+        console.log(`Filtered for va_id=${normalizedVaId}: ${filtered.length} tasks found`);
 
         const vaName = filtered[0]?.['va_name'] || vaId;
         console.log(`VA Tasks loaded: ${filtered.length} tasks found for ${vaName}`);

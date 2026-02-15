@@ -1,118 +1,53 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Film, Smartphone, ArrowRight } from 'lucide-react';
 
 export function RoleLandingPage() {
   const navigate = useNavigate();
-  const [activeRole, setActiveRole] = useState<'creator' | 'va' | null>(null);
-  const [inputValue, setInputValue] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const id = inputValue.trim();
-    if (!id) return;
-
-    if (activeRole === 'creator') {
-      navigate(`/?role=creator&id=${encodeURIComponent(id)}`);
-    } else if (activeRole === 'va') {
-      navigate(`/?role=va&id=${encodeURIComponent(id)}`);
-    }
-  };
-
-  const handleCardClick = (role: 'creator' | 'va') => {
-    setActiveRole(role);
-    setInputValue('');
-  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl space-y-8">
+      <div className="w-full max-w-xl space-y-10">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
-            Creator Operations Hub
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
+            Operations Hub
           </h1>
-          <p className="text-muted-foreground">
-            Professional TikTok Shop Team Management
+          <p className="text-muted-foreground text-lg">
+            Select your role to continue
           </p>
         </div>
 
         {/* Role Cards */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           {/* Creator Card */}
-          <Card
-            className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
-              activeRole === 'creator'
-                ? 'ring-2 ring-primary shadow-lg'
-                : 'hover:border-primary/50'
-            }`}
-            onClick={() => handleCardClick('creator')}
+          <button
+            onClick={() => navigate('/?role=creator&id=demo')}
+            className="group relative flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-left shadow-sm transition-all duration-200 hover:shadow-lg hover:border-primary/40 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-                <Film className="h-7 w-7 text-primary" />
-              </div>
-              <CardTitle className="text-xl">🎬 I'm a Creator</CardTitle>
-              <CardDescription>Create and film content</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {activeRole === 'creator' && (
-                <form onSubmit={handleSubmit} className="space-y-3 mt-2">
-                  <Input
-                    placeholder="Enter your Creator ID"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    autoFocus
-                    className="text-center"
-                    aria-label="Creator ID"
-                  />
-                  <Button type="submit" className="w-full gap-2" disabled={!inputValue.trim()}>
-                    Go to Dashboard
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-          </Card>
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 transition-colors group-hover:bg-primary/20">
+              <Film className="h-8 w-8 text-primary" />
+            </div>
+            <div className="text-center space-y-1">
+              <span className="block text-xl font-bold text-foreground">I'm a Creator</span>
+              <span className="block text-sm text-muted-foreground">Film &amp; create content</span>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
 
           {/* VA Card */}
-          <Card
-            className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
-              activeRole === 'va'
-                ? 'ring-2 ring-primary shadow-lg'
-                : 'hover:border-primary/50'
-            }`}
-            onClick={() => handleCardClick('va')}
+          <button
+            onClick={() => navigate('/?role=va&id=demo')}
+            className="group relative flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-left shadow-sm transition-all duration-200 hover:shadow-lg hover:border-primary/40 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-                <Smartphone className="h-7 w-7 text-primary" />
-              </div>
-              <CardTitle className="text-xl">📱 I'm a VA/Poster</CardTitle>
-              <CardDescription>Edit and post content</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {activeRole === 'va' && (
-                <form onSubmit={handleSubmit} className="space-y-3 mt-2">
-                  <Input
-                    placeholder="Enter your VA ID"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    autoFocus
-                    className="text-center"
-                    aria-label="VA ID"
-                  />
-                  <Button type="submit" className="w-full gap-2" disabled={!inputValue.trim()}>
-                    Go to Dashboard
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-          </Card>
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 transition-colors group-hover:bg-primary/20">
+              <Smartphone className="h-8 w-8 text-primary" />
+            </div>
+            <div className="text-center space-y-1">
+              <span className="block text-xl font-bold text-foreground">I'm a VA</span>
+              <span className="block text-sm text-muted-foreground">Edit &amp; post content</span>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
         </div>
       </div>
     </div>

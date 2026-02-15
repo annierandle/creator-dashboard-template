@@ -19,6 +19,9 @@ function getStatusColor(status: string): string {
   switch (status.toLowerCase().trim()) {
     case 'posted':
       return 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30';
+    case 'ready to post':
+    case 'ready_to_post':
+      return 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30';
     case 'review_needed':
     case 'review needed':
       return 'bg-destructive/15 text-destructive border-destructive/30';
@@ -51,6 +54,8 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted 
   const productLink = task['product_link'] || '';
   const videoFileLink = task['video_file_link'] || '';
   const postingDate = task['posting_date'] || '';
+
+
   const vaStatus = isPosted ? 'Posted' : (task['va_status'] || task['VA_status'] || 'pending');
 
   const todayPST = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });

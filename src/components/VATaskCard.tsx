@@ -21,7 +21,7 @@ function getStatusColor(status: string): string {
       return 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30';
     case 'ready to post':
     case 'ready_to_post':
-      return 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30';
+      return 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30';
     case 'review_needed':
     case 'review needed':
       return 'bg-destructive/15 text-destructive border-destructive/30';
@@ -108,7 +108,7 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted 
         <div className="flex-1 min-w-0 space-y-2">
           {/* Title row */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm text-foreground">Video #{videoNumber}</span>
+            <span className="font-bold text-base text-foreground">Video #{videoNumber}</span>
             <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getStatusColor(vaStatus))}>
               {vaStatus}
             </Badge>

@@ -5,6 +5,8 @@ import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarDays, RefreshCw, CheckCircle2, Smartphone } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 interface VADashboardProps {
   vaId: string;
@@ -31,8 +33,18 @@ export function VADashboard({ vaId }: VADashboardProps) {
     return vaId.charAt(0).toUpperCase() + vaId.slice(1).toLowerCase();
   }, [tasks, vaId]);
 
+  const HARDCODED_ACCOUNTS = [
+    '@everydaycheckout1',
+    '@shopvaultco1',
+    '@thebuynowedit',
+    '@havansqcc29',
+  ];
+
   const accountNames = useMemo(() => {
-    const names = new Set(tasks.map(t => t['account_name']).filter(Boolean));
+    const names = new Set([
+      ...HARDCODED_ACCOUNTS,
+      ...tasks.map(t => t['account_name']).filter(Boolean),
+    ]);
     return Array.from(names).sort();
   }, [tasks]);
 
@@ -207,6 +219,30 @@ export function VADashboard({ vaId }: VADashboardProps) {
                 onTogglePosted={togglePosted}
               />
             ))}
+
+            {/* All Videos Posted Button */}
+            <div className="pt-4 pb-8">
+              <Button
+                className={cn(
+                  'w-full h-12 text-base font-semibold rounded-xl transition-all duration-200',
+                  allPosted
+                    ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25'
+                    : 'bg-green-500/40 text-white/70 cursor-not-allowed'
+                )}
+                disabled={!allPosted}
+                onClick={() => {
+                  toast({ title: '🎉 All videos posted! Great work today!' });
+                }}
+              >
+                <CheckCircle2 className="h-5 w-5 mr-2" />
+                All Videos Posted
+              </Button>
+              {!allPosted && (
+                <p className="text-[11px] text-muted-foreground text-center mt-2">
+                  Mark all videos as posted to complete your daily assignment
+                </p>
+              )}
+            </div>
           </div>
         )}
       </main>

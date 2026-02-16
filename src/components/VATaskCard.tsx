@@ -13,6 +13,7 @@ interface VATaskCardProps {
   videoNumber: number;
   isPosted: boolean;
   onTogglePosted: (index: number) => void;
+  showCheckbox?: boolean;
 }
 
 function getStatusColor(status: string): string {
@@ -45,7 +46,7 @@ function formatPostingDate(dateStr: string): string {
   }
 }
 
-export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted }: VATaskCardProps) {
+export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted, showCheckbox = true }: VATaskCardProps) {
   const [copied, setCopied] = useState(false);
 
   const productName = task['product_name'] || 'Untitled Product';
@@ -97,12 +98,14 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted 
     >
       <div className="flex items-start gap-3 p-3">
         {/* Checkbox */}
-        <Checkbox
-          checked={isPosted}
-          onCheckedChange={() => onTogglePosted(index)}
-          className="mt-1 h-5 w-5 rounded border-2 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-          aria-label={`Mark Video #${videoNumber} as posted`}
-        />
+        {showCheckbox && (
+          <Checkbox
+            checked={isPosted}
+            onCheckedChange={() => onTogglePosted(index)}
+            className="mt-1 h-5 w-5 rounded border-2 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+            aria-label={`Mark Video #${videoNumber} as posted`}
+          />
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-2">

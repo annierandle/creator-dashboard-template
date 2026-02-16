@@ -8,6 +8,7 @@ interface VAAccountGroupProps {
   videoNumbers: number[];
   isPosted: (index: number) => boolean;
   onTogglePosted: (index: number) => void;
+  showCheckboxes?: boolean;
 }
 
 export function VAAccountGroup({
@@ -17,6 +18,7 @@ export function VAAccountGroup({
   videoNumbers,
   isPosted,
   onTogglePosted,
+  showCheckboxes = true,
 }: VAAccountGroupProps) {
   return (
     <div className="space-y-2">
@@ -35,6 +37,7 @@ export function VAAccountGroup({
             videoNumber={videoNumbers[i]}
             isPosted={isPosted(globalIndices[i])}
             onTogglePosted={onTogglePosted}
+            showCheckbox={showCheckboxes}
           />
         ))}
       </div>

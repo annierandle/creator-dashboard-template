@@ -100,8 +100,16 @@ function getTodayPST(): string {
   });
 }
 
+function getYesterdayPST(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString('en-CA', {
+    timeZone: 'America/Los_Angeles'
+  });
+}
+
 export function useVATasks(vaId: string | null) {
-  const [tasks, setTasks] = useState<VATask[]>([]);
+  const [allRows, setAllRows] = useState<VATask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -111,7 +119,7 @@ export function useVATasks(vaId: string | null) {
   useEffect(() => {
     async function fetchTasks() {
       if (!vaId) {
-        setTasks([]);
+        setAllRows([]);
         setLoading(false);
         return;
       }
@@ -129,7 +137,7 @@ export function useVATasks(vaId: string | null) {
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) {
           console.warn('VA_Tasks fetch failed with status:', response.status);
-          setTasks([]);
+          setAllRows([]);
           setLoading(false);
           return;
         }
@@ -137,20 +145,18 @@ export function useVATasks(vaId: string | null) {
         const csvText = await response.text();
         if (!csvText.toLowerCase().includes('va_id')) {
           console.warn('VA_Tasks tab does not contain expected headers.');
-          setTasks([]);
+          setAllRows([]);
           setLoading(false);
           return;
         }
 
-        const allRows = parseVACSV(csvText);
-        console.log(`VA_Tasks data fetched: ${allRows.length} rows`);
-        const todayPST = getTodayPST();
+        const parsed = parseVACSV(csvText);
+        console.log(`VA_Tasks data fetched: ${parsed.length} rows`);
         const normalizedVaId = vaId.trim().toLowerCase();
 
-        const filtered = allRows.filter(row => {
-          const rowDate = String(row['date_pst'] || '').trim();
+        const filtered = parsed.filter(row => {
           const rowVaId = String(row['va_id'] || '').trim().toLowerCase();
-          return rowDate === todayPST && rowVaId === normalizedVaId;
+          return rowVaId === normalizedVaId;
         });
 
         // Sort by posting_order
@@ -160,12 +166,8 @@ export function useVATasks(vaId: string | null) {
           return orderA - orderB;
         });
 
-        console.log(`Filtered for va_id=${normalizedVaId}: ${filtered.length} tasks found`);
-
-        const vaName = filtered[0]?.['va_name'] || vaId;
-        console.log(`VA Tasks loaded: ${filtered.length} tasks found for ${vaName}`);
-
-        setTasks(filtered);
+        console.log(`Filtered for va_id=${normalizedVaId}: ${filtered.length} total rows`);
+        setAllRows(filtered);
       } catch (err: any) {
         console.error('Error loading VA tasks:', err);
         setError(err.message || 'Failed to load VA tasks');
@@ -177,7 +179,20 @@ export function useVATasks(vaId: string | null) {
     fetchTasks();
   }, [vaId, refreshKey]);
 
-  return { tasks, loading, error, refetch };
+  const todayPST = getTodayPST();
+  const yesterdayPST = getYesterdayPST();
+
+  const todayTasks = useMemo(() =>
+    allRows.filter(row => String(row['date_pst'] || '').trim() === todayPST),
+    [allRows, todayPST]
+  );
+
+  const yesterdayTasks = useMemo(() =>
+    allRows.filter(row => String(row['date_pst'] || '').trim() === yesterdayPST),
+    [allRows, yesterdayPST]
+  );
+
+  return { todayTasks, yesterdayTasks, loading, error, refetch };
 }
 
 export function useVAPostingProgress(vaId: string | null, totalTasks: number) {

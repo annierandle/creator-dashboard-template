@@ -5,6 +5,7 @@ import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarDays, RefreshCw, CheckCircle2, Smartphone } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -13,9 +14,13 @@ interface VADashboardProps {
 }
 
 export function VADashboard({ vaId }: VADashboardProps) {
-  const { tasks, loading, error, refetch } = useVATasks(vaId);
-  const { isPosted, togglePosted, postedCount, allPosted } = useVAPostingProgress(vaId, tasks.length);
+  const { todayTasks, yesterdayTasks, loading, error, refetch } = useVATasks(vaId);
+  const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
 
+  const tasks = dayView === 'today' ? todayTasks : yesterdayTasks;
+  const isToday = dayView === 'today';
+
+  const { isPosted, togglePosted, postedCount, allPosted } = useVAPostingProgress(vaId, todayTasks.length);
   const [accountFilter, setAccountFilter] = useState('all');
   const [creatorFilter, setCreatorFilter] = useState('all');
 
@@ -119,10 +124,18 @@ export function VADashboard({ vaId }: VADashboardProps) {
       <main className="container max-w-2xl mx-auto px-4 py-6">
         {/* Greeting & Progress */}
         <div className="mb-6 pb-4 border-b border-border/50">
-          <h2 className="text-2xl font-bold text-foreground">
-            Hi {vaName}!
-          </h2>
-          {!loading && tasks.length > 0 && (
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-2xl font-bold text-foreground">
+              Hi {vaName}!
+            </h2>
+            <Tabs value={dayView} onValueChange={(v) => setDayView(v as 'today' | 'yesterday')}>
+              <TabsList className="h-8">
+                <TabsTrigger value="today" className="text-xs px-3 h-7">Today</TabsTrigger>
+                <TabsTrigger value="yesterday" className="text-xs px-3 h-7">Yesterday</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          {!loading && tasks.length > 0 && isToday && (
             <>
               <p className="text-sm text-muted-foreground mt-1">
                 You have {tasks.length} video{tasks.length !== 1 ? 's' : ''} to post today across {accountCount} account{accountCount !== 1 ? 's' : ''}
@@ -136,12 +149,17 @@ export function VADashboard({ vaId }: VADashboardProps) {
                 ) : (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <span className="text-xs">
-                      Posted: {postedCount} of {tasks.length} videos ({Math.round((postedCount / tasks.length) * 100)}%)
+                      Posted: {postedCount} of {todayTasks.length} videos ({Math.round((postedCount / todayTasks.length) * 100)}%)
                     </span>
                   </div>
                 )}
               </div>
             </>
+          )}
+          {!loading && tasks.length > 0 && !isToday && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Yesterday's assignments ({tasks.length} video{tasks.length !== 1 ? 's' : ''})
+            </p>
           )}
         </div>
 
@@ -217,32 +235,35 @@ export function VADashboard({ vaId }: VADashboardProps) {
                 videoNumbers={group.videoNumbers}
                 isPosted={isPosted}
                 onTogglePosted={togglePosted}
+                showCheckboxes={isToday}
               />
             ))}
 
-            {/* All Videos Posted Button */}
-            <div className="pt-4 pb-8">
-              <Button
-                className={cn(
-                  'w-full h-12 text-base font-semibold rounded-xl transition-all duration-200',
-                  allPosted
-                    ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25'
-                    : 'bg-green-500/40 text-white/70 cursor-not-allowed'
+            {/* All Videos Posted Button - only for today */}
+            {isToday && (
+              <div className="pt-4 pb-8">
+                <Button
+                  className={cn(
+                    'w-full h-12 text-base font-semibold rounded-xl transition-all duration-200',
+                    allPosted
+                      ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25'
+                      : 'bg-green-500/40 text-white/70 cursor-not-allowed'
+                  )}
+                  disabled={!allPosted}
+                  onClick={() => {
+                    toast({ title: '🎉 All videos posted! Great work today!' });
+                  }}
+                >
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  All Videos Posted
+                </Button>
+                {!allPosted && (
+                  <p className="text-[11px] text-muted-foreground text-center mt-2">
+                    Mark all videos as posted to complete your daily assignment
+                  </p>
                 )}
-                disabled={!allPosted}
-                onClick={() => {
-                  toast({ title: '🎉 All videos posted! Great work today!' });
-                }}
-              >
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                All Videos Posted
-              </Button>
-              {!allPosted && (
-                <p className="text-[11px] text-muted-foreground text-center mt-2">
-                  Mark all videos as posted to complete your daily assignment
-                </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -4,7 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Copy, Check, Download } from 'lucide-react';
+import { Copy, Check, Download, StickyNote } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 interface VATaskCardProps {
@@ -56,6 +57,8 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted,
   const videoFileLink = task['video_file_link'] || '';
   const postingDate = task['posting_date'] || '';
   const postingOrder = task['posting_order'] || '';
+  const notes = task['notes'] || '';
+  const hasNotes = notes.trim().length > 0;
 
 
   const vaStatus = isPosted ? 'Posted' : (task['va_status'] || task['VA_status'] || 'pending');
@@ -154,6 +157,29 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted,
                   <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                 )}
               </button>
+            </div>
+          )}
+
+          {/* Notes */}
+          {hasNotes && (
+            <div className="flex items-start gap-2 border border-amber-200 dark:border-amber-800/50 rounded bg-amber-50 dark:bg-amber-950/30 p-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-start gap-2 text-left w-full hover:opacity-80 cursor-pointer transition-opacity focus:outline-none"
+                    aria-label="View note"
+                  >
+                    <StickyNote className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <span className="text-xs text-amber-800 dark:text-amber-300 font-medium">📝 Note attached — tap to read</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 max-h-48 overflow-y-auto" side="top" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm border-b pb-2">📝 Note</h4>
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">{notes}</p>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 

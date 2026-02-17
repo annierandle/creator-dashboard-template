@@ -3,63 +3,75 @@ import { Assignment } from '@/types/assignment';
 
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR71Z8tflSQ766x9J0dY1RCujrmPEKHPrH9q0uPmxF-CUq29W00jJuLc6jMpGMjoFhyKC4-KreB0J1j/pub?gid=1020515194&single=true&output=csv';
 
+// Parse CSV text into rows, correctly handling multi-line quoted fields
+function parseCSVRows(csvText: string): string[][] {
+  const rows: string[][] = [];
+  let current = '';
+  let inQuotes = false;
+  const fields: string[] = [];
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+
+    if (char === '"') {
+      if (inQuotes && i + 1 < csvText.length && csvText[i + 1] === '"') {
+        current += '"';
+        i++; // skip escaped quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      fields.push(current.trim());
+      current = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      // End of row
+      if (char === '\r' && i + 1 < csvText.length && csvText[i + 1] === '\n') {
+        i++; // skip \r\n pair
+      }
+      fields.push(current.trim());
+      if (fields.some(f => f.length > 0)) {
+        rows.push([...fields]);
+      }
+      fields.length = 0;
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  // Last row
+  fields.push(current.trim());
+  if (fields.some(f => f.length > 0)) {
+    rows.push([...fields]);
+  }
+
+  return rows;
+}
+
 function parseCSV(csvText: string): Assignment[] {
-  const lines = csvText
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
+  const rows = parseCSVRows(csvText);
 
-  console.log('Total CSV lines:', lines.length);
-  console.log('Line 1 preview:', lines[0]?.substring(0, 80));
-  console.log('Line 2 preview:', lines[1]?.substring(0, 80));
-  console.log('Line 3 preview:', lines[2]?.substring(0, 80));
+  console.log('Total CSV rows:', rows.length);
+  console.log('Row 1 preview:', rows[0]?.slice(0, 5));
 
-  if (lines.length < 4) {
-    console.error('CSV has insufficient lines (need at least 4)');
+  if (rows.length < 4) {
+    console.error('CSV has insufficient rows (need at least 4)');
     return [];
   }
 
-  // FIND THE REAL HEADER ROW - look for line containing 'date_pst'
-  const headerRowIndex = lines.findIndex(line => 
-    line.toLowerCase().includes('date_pst')
+  // FIND THE REAL HEADER ROW - look for row containing 'date_pst'
+  const headerRowIndex = rows.findIndex(row =>
+    row.some(cell => cell.toLowerCase().includes('date_pst'))
   );
 
   if (headerRowIndex === -1) {
     console.error('CRITICAL: Could not find header row containing "date_pst"');
-    console.log('Available lines:', lines.slice(0, 5));
     return [];
   }
 
-  console.log(`✅ Found header row at index ${headerRowIndex}:`, lines[headerRowIndex]);
-
-  // Parse CSV line properly handling quoted values and commas inside quotes
-  function parseCsvLine(line: string): string[] {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    result.push(current.trim());
-    return result;
-  }
-
-  // Extract headers from the correct row
-  const headers = parseCsvLine(lines[headerRowIndex])
-    .map(h => h.toLowerCase().replace(/['"]+/g, '').trim());
+  const headers = rows[headerRowIndex].map(h => h.toLowerCase().replace(/['"]+/g, '').trim());
 
   console.log('✅ Parsed headers:', headers);
-  console.log('✅ Has script_content column:', headers.includes('script_content'));
+  console.log('✅ Has notes column:', headers.includes('notes'));
 
   // Verify we have required headers
   if (!headers.includes('date_pst') || !headers.includes('creator_id')) {
@@ -67,36 +79,30 @@ function parseCSV(csvText: string): Assignment[] {
     return [];
   }
 
-  // Parse data rows (everything AFTER the header row)
-  const rows: Assignment[] = [];
-  for (let i = headerRowIndex + 1; i < lines.length; i++) {
-    const line = lines[i];
-    
-    // Skip completely empty rows
-    if (line.replace(/,/g, '').trim().length === 0) {
-      continue;
-    }
+  // Map data rows (everything AFTER the header row)
+  const results: Assignment[] = [];
+  for (let i = headerRowIndex + 1; i < rows.length; i++) {
+    const values = rows[i];
 
-    const values = parseCsvLine(line);
+    // Skip empty rows
+    if (values.every(v => v.length === 0)) continue;
+
     const row: Assignment = {};
-    
     headers.forEach((header, index) => {
       let value = values[index] || '';
-      // Clean up: remove quotes and extra whitespace
       value = value.replace(/^"|"$/g, '').replace(/[\r\n\t]+/g, '').trim();
       row[header] = value;
     });
-    
-    // Only include rows that have both date_pst and creator_id
+
     if (row['date_pst'] && row['creator_id']) {
-      rows.push(row);
+      results.push(row);
     }
   }
 
-  console.log('✅ First parsed data row:', rows[0]);
-  console.log('✅ Total valid data rows:', rows.length);
-  
-  return rows;
+  console.log('✅ First parsed data row:', results[0]);
+  console.log('✅ Total valid data rows:', results.length);
+
+  return results;
 }
 
 export function useAssignments(creatorId: string | null) {

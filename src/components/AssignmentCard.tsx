@@ -81,30 +81,6 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
         </div>
       )}
 
-      {/* Notes Bubble - Top area, subtle speech bubble */}
-      {hasNotes && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-          {isFilmed && <div className="h-6" />}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center gap-1.5 px-3 py-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-[11px] font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors cursor-pointer shadow-sm border border-red-200/60 dark:border-red-700/40"
-                aria-label="View filming note"
-              >
-                <StickyNote className="h-3 w-3" />
-                filming note · tap to read
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="start">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm border-b pb-2">📝 Filming Note</h4>
-                <p className="text-sm whitespace-pre-wrap text-muted-foreground">{notes}</p>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      )}
-
       <div className="flex">
         {/* Checkbox Column */}
         <div className="flex items-center justify-center px-3 py-4 border-r border-border/50">
@@ -118,21 +94,42 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
 
         {/* Card Content */}
         <div className="flex-1">
-          <CardHeader className={cn("pb-2 pr-14", hasNotes && "pt-8")}>
-            <CardTitle className="text-lg font-semibold leading-tight">
-              {hasProductLink ? (
-                <a
-                  href={productLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-                >
-                  {productName}
-                </a>
-              ) : (
-                productName
+          <CardHeader className="pb-2 pr-14">
+            <div className="flex items-start justify-between gap-2">
+              <CardTitle className="text-lg font-semibold leading-tight">
+                {hasProductLink ? (
+                  <a
+                    href={productLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                  >
+                    {productName}
+                  </a>
+                ) : (
+                  productName
+                )}
+              </CardTitle>
+              {hasNotes && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-[11px] font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors cursor-pointer shadow-sm border border-red-200/60 dark:border-red-700/40 shrink-0 whitespace-nowrap"
+                      aria-label="View filming note"
+                    >
+                      <StickyNote className="h-3 w-3" />
+                      filming note
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="end">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm border-b pb-2">📝 Filming Note</h4>
+                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">{notes}</p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
-            </CardTitle>
+            </div>
             
             {/* Video Style Badge */}
             {hasVideoStyle && (

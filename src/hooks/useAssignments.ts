@@ -124,7 +124,11 @@ export function useAssignments(creatorId: string | null) {
         console.log('Creator ID:', creatorId);
         console.log('Fetching CSV from:', CSV_URL);
 
-        const response = await fetch(CSV_URL);
+        const cacheBuster = `&_t=${Date.now()}`;
+        const response = await fetch(CSV_URL + cacheBuster, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`);

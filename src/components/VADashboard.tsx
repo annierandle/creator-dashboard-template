@@ -71,7 +71,6 @@ export function VADashboard({ vaId }: VADashboardProps) {
   // Group filtered tasks by account
   const accountGroups = useMemo(() => {
     const groups: Record<string, { tasks: typeof filteredTasks; globalIndices: number[]; videoNumbers: number[] }> = {};
-    let videoCounter = 1;
 
     filteredTasks.forEach(task => {
       const originalIndex = tasks.indexOf(task);
@@ -81,8 +80,7 @@ export function VADashboard({ vaId }: VADashboardProps) {
       }
       groups[account].tasks.push(task);
       groups[account].globalIndices.push(originalIndex);
-      groups[account].videoNumbers.push(videoCounter);
-      videoCounter++;
+      groups[account].videoNumbers.push(groups[account].tasks.length);
     });
 
     return groups;

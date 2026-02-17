@@ -83,7 +83,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
 
       {/* Notes Bubble - Top area, subtle speech bubble */}
       {hasNotes && (
-        <div className="absolute top-2 left-14 z-10">
+        <div className="absolute top-2 right-12 z-10">
           {isFilmed && <div className="h-6" />}
           <Popover>
             <PopoverTrigger asChild>
@@ -125,7 +125,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
                   href={productLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-primary hover:underline transition-colors"
+                  className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
                 >
                   {productName}
                 </a>

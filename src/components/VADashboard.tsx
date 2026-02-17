@@ -1,10 +1,11 @@
 import { useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useVATasks, useVAPostingProgress } from '@/hooks/useVATasks';
 import { VAAccountGroup } from '@/components/VAAccountGroup';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarDays, RefreshCw, CheckCircle2, Smartphone } from 'lucide-react';
+import { CalendarDays, RefreshCw, CheckCircle2, Smartphone, Home } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -14,6 +15,7 @@ interface VADashboardProps {
 }
 
 export function VADashboard({ vaId }: VADashboardProps) {
+  const navigate = useNavigate();
   const { todayTasks, yesterdayTasks, loading, error, refetch } = useVATasks(vaId);
   const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
 
@@ -98,6 +100,15 @@ export function VADashboard({ vaId }: VADashboardProps) {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => navigate('/')}
+                  aria-label="Go home"
+                >
+                  <Home className="h-4 w-4" />
+                </Button>
                 <Smartphone className="h-5 w-5 text-primary" />
                 <h1 className="text-xl font-bold text-foreground">VA Dashboard</h1>
               </div>

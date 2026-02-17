@@ -9,10 +9,11 @@ import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { CreatorHub } from '@/components/CreatorHub';
 import { RoleLandingPage } from '@/components/RoleLandingPage';
 import { VADashboard } from '@/components/VADashboard';
-import { CalendarDays, RefreshCw, Video, CheckCircle2, LayoutGrid, ClipboardList } from 'lucide-react';
+import { CalendarDays, RefreshCw, Video, CheckCircle2, LayoutGrid, ClipboardList, Home } from 'lucide-react';
 import { Assignment } from '@/types/assignment';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -41,6 +42,7 @@ const Index = () => {
 
 // Extracted existing creator dashboard into its own component
 function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('hub');
   const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
   const { assignments, yesterdayAssignments, loading, error, refetch } = useAssignments(creatorId);
@@ -112,7 +114,18 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
         <div className="container max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => navigate('/')}
+                aria-label="Go home"
+              >
+                <Home className="h-4 w-4" />
+              </Button>
               <h1 className="text-xl font-bold text-foreground">Creator Dashboard</h1>
+            </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                 <CalendarDays className="h-3.5 w-3.5" />
                 <span>{today}</span>

@@ -83,12 +83,12 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
 
       {/* Notes Bubble - Top area, subtle speech bubble */}
       {hasNotes && (
-        <div className="absolute top-2 right-1/3 z-10">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
           {isFilmed && <div className="h-6" />}
           <Popover>
             <PopoverTrigger asChild>
               <button
-                className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full text-[11px] font-medium hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors cursor-pointer shadow-sm border border-amber-200/60 dark:border-amber-700/40"
+                className="flex items-center gap-1.5 px-3 py-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-[11px] font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors cursor-pointer shadow-sm border border-red-200/60 dark:border-red-700/40"
                 aria-label="View filming note"
               >
                 <StickyNote className="h-3 w-3" />

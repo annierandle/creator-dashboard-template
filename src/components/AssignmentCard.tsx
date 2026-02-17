@@ -40,21 +40,14 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
   const scriptContent = assignment['script_content'] || '';
   const assignmentOrder = assignment['assignment_order'] || '';
   const notes = assignment['notes'] || '';
-  
-  // Debug: Log assignment data
-  console.log('Assignment card debug:', {
-    index,
-    productName,
-    assignmentOrder,
-    hasScriptContent: !!scriptContent.trim(),
-    scriptContentPreview: scriptContent.substring(0, 50)
-  });
+  const productLink = assignment['product_link'] || '';
   
   const hasScript = scriptName.trim().length > 0;
   const hasScriptContent = scriptContent.trim().length > 0;
   const hasVideoStyle = videoStyle.trim().length > 0;
   const hasOrder = assignmentOrder.trim().length > 0;
   const hasNotes = notes.trim().length > 0;
+  const hasProductLink = productLink.trim().length > 0;
 
   const handleCheckboxChange = () => {
     onToggleFilmed(index);
@@ -88,6 +81,30 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
         </div>
       )}
 
+      {/* Notes Bubble - Top area, subtle speech bubble */}
+      {hasNotes && (
+        <div className="absolute top-2 left-14 z-10">
+          {isFilmed && <div className="h-6" />}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full text-[11px] font-medium hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors cursor-pointer shadow-sm border border-amber-200/60 dark:border-amber-700/40"
+                aria-label="View filming note"
+              >
+                <StickyNote className="h-3 w-3" />
+                filming note · tap to read
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="start">
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm border-b pb-2">📝 Filming Note</h4>
+                <p className="text-sm whitespace-pre-wrap text-muted-foreground">{notes}</p>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
       <div className="flex">
         {/* Checkbox Column */}
         <div className="flex items-center justify-center px-3 py-4 border-r border-border/50">
@@ -101,9 +118,20 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
 
         {/* Card Content */}
         <div className="flex-1">
-          <CardHeader className="pb-2 pr-14">
+          <CardHeader className={cn("pb-2 pr-14", hasNotes && "pt-8")}>
             <CardTitle className="text-lg font-semibold leading-tight">
-              {productName}
+              {hasProductLink ? (
+                <a
+                  href={productLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary hover:underline transition-colors"
+                >
+                  {productName}
+                </a>
+              ) : (
+                productName
+              )}
             </CardTitle>
             
             {/* Video Style Badge */}
@@ -119,29 +147,6 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
           </CardHeader>
 
           <CardContent className="space-y-2 pt-0">
-            {/* Notes */}
-            {hasNotes && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-800/50">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="flex items-start gap-2 text-left w-full hover:opacity-80 cursor-pointer transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
-                      aria-label="View note"
-                    >
-                      <StickyNote className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                      <span className="text-sm text-amber-800 dark:text-amber-300 font-medium">📝 Note attached — tap to read</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="start">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm border-b pb-2">📝 Note</h4>
-                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">{notes}</p>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
             {/* Script Status */}
             {hasScript ? (
               <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">

@@ -48,11 +48,17 @@ export function VADashboard({ vaId }: VADashboardProps) {
   ];
 
   const accountNames = useMemo(() => {
+    const fromTasks = tasks.map(t => t['account_name']).filter(Boolean);
     const names = new Set([
       ...HARDCODED_ACCOUNTS,
-      ...tasks.map(t => t['account_name']).filter(Boolean),
+      ...fromTasks,
     ]);
     return Array.from(names).sort();
+  }, [tasks]);
+
+  const activeAccountCount = useMemo(() => {
+    const active = new Set(tasks.map(t => t['account_name']).filter(Boolean));
+    return active.size;
   }, [tasks]);
 
   const creatorNames = useMemo(() => {
@@ -86,7 +92,7 @@ export function VADashboard({ vaId }: VADashboardProps) {
     return groups;
   }, [filteredTasks, tasks]);
 
-  const accountCount = accountNames.length;
+  const accountCount = activeAccountCount;
 
   const handleRefresh = useCallback(() => refetch(), [refetch]);
 

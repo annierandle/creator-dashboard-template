@@ -2,7 +2,7 @@ import { Assignment } from '@/types/assignment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, VolumeX, Check } from 'lucide-react';
+import { FileText, VolumeX, Check, StickyNote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AssignmentCardProps {
@@ -39,6 +39,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
   const scriptName = assignment['script_name'] || '';
   const scriptContent = assignment['script_content'] || '';
   const assignmentOrder = assignment['assignment_order'] || '';
+  const notes = assignment['notes'] || '';
   
   // Debug: Log assignment data
   console.log('Assignment card debug:', {
@@ -53,6 +54,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
   const hasScriptContent = scriptContent.trim().length > 0;
   const hasVideoStyle = videoStyle.trim().length > 0;
   const hasOrder = assignmentOrder.trim().length > 0;
+  const hasNotes = notes.trim().length > 0;
 
   const handleCheckboxChange = () => {
     onToggleFilmed(index);
@@ -117,6 +119,29 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
           </CardHeader>
 
           <CardContent className="space-y-2 pt-0">
+            {/* Notes */}
+            {hasNotes && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-800/50">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="flex items-start gap-2 text-left w-full hover:opacity-80 cursor-pointer transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                      aria-label="View note"
+                    >
+                      <StickyNote className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                      <span className="text-sm text-amber-800 dark:text-amber-300 font-medium">📝 Note attached — tap to read</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="start">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm border-b pb-2">📝 Note</h4>
+                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">{notes}</p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
             {/* Script Status */}
             {hasScript ? (
               <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">

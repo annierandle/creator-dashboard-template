@@ -94,13 +94,13 @@ function parseVACSV(csvText: string): VATask[] {
   return rows;
 }
 
-function getTodayPST(): string {
+export function getTodayPST(): string {
   return new Date().toLocaleDateString('en-CA', {
     timeZone: 'America/Los_Angeles'
   });
 }
 
-function getYesterdayPST(): string {
+export function getYesterdayPST(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toLocaleDateString('en-CA', {
@@ -108,7 +108,7 @@ function getYesterdayPST(): string {
   });
 }
 
-function getTomorrowPST(): string {
+export function getTomorrowPST(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   return d.toLocaleDateString('en-CA', {
@@ -209,9 +209,9 @@ export function useVATasks(vaId: string | null) {
   return { todayTasks, yesterdayTasks, tomorrowTasks, loading, error, refetch };
 }
 
-export function useVAPostingProgress(vaId: string | null, totalTasks: number) {
+export function useVAPostingProgress(vaId: string | null, totalTasks: number, dateKey?: string) {
   const [postedSet, setPostedSet] = useState<Set<string>>(new Set());
-  const todayDate = getTodayPST();
+  const targetDate = dateKey || getTodayPST();
 
   // Clean old entries on mount (keep last 7 days)
   useEffect(() => {
@@ -224,7 +224,6 @@ export function useVAPostingProgress(vaId: string | null, totalTasks: number) {
       
       vaKeys.forEach(key => {
         const parts = key.split('_');
-        // va_posted_{vaId}_{date}_{order}
         const datepart = parts[3] || '';
         if (datepart < cutoff) {
           localStorage.removeItem(key);
@@ -239,7 +238,7 @@ export function useVAPostingProgress(vaId: string | null, totalTasks: number) {
   useEffect(() => {
     const posted = new Set<string>();
     for (let i = 0; i < totalTasks; i++) {
-      const key = `va_posted_${vaId}_${todayDate}_${i}`;
+      const key = `va_posted_${vaId}_${targetDate}_${i}`;
       try {
         if (localStorage.getItem(key) === 'true') {
           posted.add(String(i));
@@ -247,14 +246,14 @@ export function useVAPostingProgress(vaId: string | null, totalTasks: number) {
       } catch (e) { /* ignore */ }
     }
     setPostedSet(posted);
-  }, [vaId, todayDate, totalTasks]);
+  }, [vaId, targetDate, totalTasks]);
 
   const isPosted = useCallback((index: number): boolean => {
     return postedSet.has(String(index));
   }, [postedSet]);
 
   const togglePosted = useCallback((index: number) => {
-    const key = `va_posted_${vaId}_${todayDate}_${index}`;
+    const key = `va_posted_${vaId}_${targetDate}_${index}`;
     const indexStr = String(index);
 
     setPostedSet(prev => {
@@ -268,7 +267,7 @@ export function useVAPostingProgress(vaId: string | null, totalTasks: number) {
       }
       return newSet;
     });
-  }, [vaId, todayDate]);
+  }, [vaId, targetDate]);
 
   const postedCount = postedSet.size;
   const allPosted = totalTasks > 0 && postedCount === totalTasks;

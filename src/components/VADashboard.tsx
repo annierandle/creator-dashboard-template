@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useVATasks, useVAPostingProgress } from '@/hooks/useVATasks';
+import { useVATasks, useVAPostingProgress, getTodayPST, getYesterdayPST, getTomorrowPST } from '@/hooks/useVATasks';
 import { VAAccountGroup } from '@/components/VAAccountGroup';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,8 @@ export function VADashboard({ vaId }: VADashboardProps) {
   const tasks = dayView === 'today' ? todayTasks : dayView === 'yesterday' ? yesterdayTasks : tomorrowTasks;
   const isToday = dayView === 'today';
 
-  const { isPosted, togglePosted, postedCount, allPosted } = useVAPostingProgress(vaId, todayTasks.length);
+  const currentDateKey = dayView === 'today' ? getTodayPST() : dayView === 'yesterday' ? getYesterdayPST() : getTomorrowPST();
+  const { isPosted, togglePosted, postedCount, allPosted } = useVAPostingProgress(vaId, tasks.length, currentDateKey);
 
   const formatDateLabel = (offset: number) => {
     const d = new Date();
@@ -161,31 +162,26 @@ export function VADashboard({ vaId }: VADashboardProps) {
               </TabsList>
             </Tabs>
           </div>
-          {!loading && tasks.length > 0 && isToday && (
+          {!loading && tasks.length > 0 && (
             <>
               <p className="text-sm text-muted-foreground mt-1">
-                You have {tasks.length} video{tasks.length !== 1 ? 's' : ''} to post today across {accountCount} account{accountCount !== 1 ? 's' : ''}
+                {tasks.length} video{tasks.length !== 1 ? 's' : ''} across {accountCount} account{accountCount !== 1 ? 's' : ''}
               </p>
               <div className="mt-2 flex items-center gap-2">
                 {allPosted ? (
                   <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span className="text-xs font-medium">All done for today! Excellent work!</span>
+                    <span className="text-xs font-medium">All done! Excellent work!</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <span className="text-xs">
-                      Posted: {postedCount} of {todayTasks.length} videos ({Math.round((postedCount / todayTasks.length) * 100)}%)
+                      Posted: {postedCount} of {tasks.length} videos ({Math.round((postedCount / tasks.length) * 100)}%)
                     </span>
                   </div>
                 )}
               </div>
             </>
-          )}
-          {!loading && tasks.length > 0 && !isToday && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {dayView === 'yesterday' ? 'Yesterday\'s' : 'Tomorrow\'s'} assignments ({tasks.length} video{tasks.length !== 1 ? 's' : ''})
-            </p>
           )}
         </div>
 
@@ -261,12 +257,12 @@ export function VADashboard({ vaId }: VADashboardProps) {
                 videoNumbers={group.videoNumbers}
                 isPosted={isPosted}
                 onTogglePosted={togglePosted}
-                showCheckboxes={isToday}
+                showCheckboxes={true}
               />
             ))}
 
-            {/* All Videos Posted Button - only for today */}
-            {isToday && (
+            {/* All Videos Posted Button */}
+            {(
               <div className="pt-4 pb-8">
                 <Button
                   className={cn(

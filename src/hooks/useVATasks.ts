@@ -108,6 +108,14 @@ function getYesterdayPST(): string {
   });
 }
 
+function getTomorrowPST(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toLocaleDateString('en-CA', {
+    timeZone: 'America/Los_Angeles'
+  });
+}
+
 export function useVATasks(vaId: string | null) {
   const [allRows, setAllRows] = useState<VATask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,6 +189,7 @@ export function useVATasks(vaId: string | null) {
 
   const todayPST = getTodayPST();
   const yesterdayPST = getYesterdayPST();
+  const tomorrowPST = getTomorrowPST();
 
   const todayTasks = useMemo(() =>
     allRows.filter(row => String(row['date_pst'] || '').trim() === todayPST),
@@ -192,7 +201,12 @@ export function useVATasks(vaId: string | null) {
     [allRows, yesterdayPST]
   );
 
-  return { todayTasks, yesterdayTasks, loading, error, refetch };
+  const tomorrowTasks = useMemo(() =>
+    allRows.filter(row => String(row['date_pst'] || '').trim() === tomorrowPST),
+    [allRows, tomorrowPST]
+  );
+
+  return { todayTasks, yesterdayTasks, tomorrowTasks, loading, error, refetch };
 }
 
 export function useVAPostingProgress(vaId: string | null, totalTasks: number) {

@@ -16,13 +16,23 @@ interface VADashboardProps {
 
 export function VADashboard({ vaId }: VADashboardProps) {
   const navigate = useNavigate();
-  const { todayTasks, yesterdayTasks, loading, error, refetch } = useVATasks(vaId);
-  const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
+  const { todayTasks, yesterdayTasks, tomorrowTasks, loading, error, refetch } = useVATasks(vaId);
+  const [dayView, setDayView] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
 
-  const tasks = dayView === 'today' ? todayTasks : yesterdayTasks;
+  const tasks = dayView === 'today' ? todayTasks : dayView === 'yesterday' ? yesterdayTasks : tomorrowTasks;
   const isToday = dayView === 'today';
 
   const { isPosted, togglePosted, postedCount, allPosted } = useVAPostingProgress(vaId, todayTasks.length);
+
+  const formatDateLabel = (offset: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'America/Los_Angeles' });
+  };
+
+  const yesterdayLabel = formatDateLabel(-1);
+  const todayLabel = formatDateLabel(0);
+  const tomorrowLabel = formatDateLabel(1);
   const [accountFilter, setAccountFilter] = useState('all');
   const [creatorFilter, setCreatorFilter] = useState('all');
 
@@ -143,10 +153,11 @@ export function VADashboard({ vaId }: VADashboardProps) {
             <h2 className="text-2xl font-bold text-foreground">
               Hi {vaName}!
             </h2>
-            <Tabs value={dayView} onValueChange={(v) => setDayView(v as 'today' | 'yesterday')}>
+            <Tabs value={dayView} onValueChange={(v) => setDayView(v as 'yesterday' | 'today' | 'tomorrow')}>
               <TabsList className="h-8">
-                <TabsTrigger value="today" className="text-xs px-3 h-7">Today</TabsTrigger>
-                <TabsTrigger value="yesterday" className="text-xs px-3 h-7">Yesterday</TabsTrigger>
+                <TabsTrigger value="yesterday" className="text-[10px] px-2 h-7">{yesterdayLabel}</TabsTrigger>
+                <TabsTrigger value="today" className="text-[10px] px-2 h-7">{todayLabel}</TabsTrigger>
+                <TabsTrigger value="tomorrow" className="text-[10px] px-2 h-7">{tomorrowLabel}</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -173,7 +184,7 @@ export function VADashboard({ vaId }: VADashboardProps) {
           )}
           {!loading && tasks.length > 0 && !isToday && (
             <p className="text-sm text-muted-foreground mt-1">
-              Yesterday's assignments ({tasks.length} video{tasks.length !== 1 ? 's' : ''})
+              {dayView === 'yesterday' ? 'Yesterday\'s' : 'Tomorrow\'s'} assignments ({tasks.length} video{tasks.length !== 1 ? 's' : ''})
             </p>
           )}
         </div>

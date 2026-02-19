@@ -64,7 +64,7 @@ export function VATaskCard({ task, index, videoNumber, isPosted, onTogglePosted,
   const vaStatus = isPosted ? 'Posted' : (task['va_status'] || task['VA_status'] || 'pending');
 
   const todayPST = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
-  const isPostingToday = !postingDate || postingDate === todayPST;
+  const isPostingToday = false; // Always show posting date
 
   const handleCopyCaption = useCallback(async () => {
     if (!captionText) return;

@@ -1,9 +1,10 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Assignment } from '@/types/assignment';
 import { useHubResources } from '@/hooks/useHubResources';
 import { useUpcomingAssignments } from '@/hooks/useUpcomingAssignments';
 import { useUpdateReadStatus } from '@/hooks/useUpdateReadStatus';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   CalendarDays, 
   CalendarCheck, 
@@ -44,6 +45,35 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
     if (!creatorName) return 'Creator';
     return creatorName.charAt(0).toUpperCase() + creatorName.slice(1).toLowerCase();
   }, [creatorName]);
+
+  // Bonus completion tracking
+  const [bonusCompleted, setBonusCompleted] = useState<Record<string, { by: string; at: string }>>({});
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bonus_completed');
+      if (saved) setBonusCompleted(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const toggleBonusComplete = useCallback((bonusTitle: string) => {
+    setBonusCompleted(prev => {
+      const key = bonusTitle.replace(/\s+/g, '_').slice(0, 50);
+      const next = { ...prev };
+      if (next[key]) {
+        delete next[key];
+      } else {
+        next[key] = { by: displayName, at: new Date().toISOString() };
+      }
+      try { localStorage.setItem('bonus_completed', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [displayName]);
+
+  const isBonusDone = useCallback((bonusTitle: string) => {
+    const key = bonusTitle.replace(/\s+/g, '_').slice(0, 50);
+    return bonusCompleted[key] || null;
+  }, [bonusCompleted]);
 
   const stats = useMemo(() => {
     const totalAssignments = assignments.length;
@@ -187,31 +217,51 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
               <p className="text-sm text-muted-foreground">Loading...</p>
             ) : bonusOpportunities.length > 0 ? (
               <div className="space-y-3">
-                {bonusOpportunities.map((bonus, index) => (
-                  <div key={index} className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">{bonus.title}</p>
-                    {bonus.content && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{bonus.content}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      {bonus.date_posted && (
-                        <span className="text-xs text-muted-foreground/70">
-                          Posted: {formatDate(bonus.date_posted)}
-                        </span>
-                      )}
-                      {bonus.link && (
-                        <a 
-                          href={bonus.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline font-medium"
-                        >
-                          View Details →
-                        </a>
-                      )}
+                {bonusOpportunities.map((bonus, index) => {
+                  const done = isBonusDone(bonus.title);
+                  return (
+                    <div key={index} className={`space-y-2 p-3 rounded-lg border transition-all ${done ? 'bg-muted/40 border-border/50 opacity-70' : 'bg-background border-border'}`}>
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={!!done}
+                          onCheckedChange={() => toggleBonusComplete(bonus.title)}
+                          className="mt-0.5"
+                          aria-label={`Mark "${bonus.title}" as completed`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{bonus.title}</p>
+                          {bonus.content && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{bonus.content}</p>
+                          )}
+                          <div className="flex items-center justify-between mt-1.5">
+                            <div className="flex items-center gap-2">
+                              {bonus.date_posted && (
+                                <span className="text-xs text-muted-foreground/70">
+                                  Posted: {formatDate(bonus.date_posted)}
+                                </span>
+                              )}
+                              {done && (
+                                <span className="text-xs text-primary/70 font-medium">
+                                  ✓ Done by {done.by}
+                                </span>
+                              )}
+                            </div>
+                            {bonus.link && (
+                              <a 
+                                href={bonus.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline font-medium"
+                              >
+                                Example Video →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">

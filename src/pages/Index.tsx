@@ -67,7 +67,23 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
     refetch();
   }, [refetch]);
 
-  const activeAssignments = dayView === 'today' ? assignments : yesterdayAssignments;
+  const activeAssignments = useMemo(() => {
+    switch (dayView) {
+      case '2days_ago': return twoDaysAgoAssignments;
+      case 'yesterday': return yesterdayAssignments;
+      case 'today': return assignments;
+      case 'tomorrow': return tomorrowAssignments;
+    }
+  }, [dayView, assignments, yesterdayAssignments, twoDaysAgoAssignments, tomorrowAssignments]);
+
+  const dayViewLabel = useMemo(() => {
+    switch (dayView) {
+      case '2days_ago': return '2 Days Ago';
+      case 'yesterday': return 'Yesterday';
+      case 'today': return 'Today';
+      case 'tomorrow': return 'Tomorrow';
+    }
+  }, [dayView]);
 
   const stats = useMemo(() => {
     const totalAssignments = activeAssignments.length;

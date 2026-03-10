@@ -44,8 +44,8 @@ const Index = () => {
 function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('hub');
-  const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
-  const { assignments, yesterdayAssignments, loading, error, refetch } = useAssignments(creatorId);
+  const [dayView, setDayView] = useState<'2days_ago' | 'yesterday' | 'today' | 'tomorrow'>('today');
+  const { assignments, yesterdayAssignments, twoDaysAgoAssignments, tomorrowAssignments, loading, error, refetch } = useAssignments(creatorId);
   
   const { isFilmed, toggleFilmed, filmedCount, allFilmed } = useFilmingProgress(
     creatorId, 

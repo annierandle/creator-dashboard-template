@@ -41,6 +41,35 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
   const { upcomingDays, loading: upcomingLoading } = useUpcomingAssignments(creatorName);
   const { isRead, markAsRead } = useUpdateReadStatus(creatorName, updates);
 
+  // Bonus completion tracking
+  const [bonusCompleted, setBonusCompleted] = useState<Record<string, { by: string; at: string }>>({});
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bonus_completed');
+      if (saved) setBonusCompleted(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const toggleBonusComplete = useCallback((bonusTitle: string) => {
+    setBonusCompleted(prev => {
+      const key = bonusTitle.replace(/\s+/g, '_').slice(0, 50);
+      const next = { ...prev };
+      if (next[key]) {
+        delete next[key];
+      } else {
+        next[key] = { by: displayName, at: new Date().toISOString() };
+      }
+      try { localStorage.setItem('bonus_completed', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [displayName]);
+
+  const isBonusDone = useCallback((bonusTitle: string) => {
+    const key = bonusTitle.replace(/\s+/g, '_').slice(0, 50);
+    return bonusCompleted[key] || null;
+  }, [bonusCompleted]);
+
   const displayName = useMemo(() => {
     if (!creatorName) return 'Creator';
     return creatorName.charAt(0).toUpperCase() + creatorName.slice(1).toLowerCase();

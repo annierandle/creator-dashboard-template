@@ -1,9 +1,10 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Assignment } from '@/types/assignment';
 import { useHubResources } from '@/hooks/useHubResources';
 import { useUpcomingAssignments } from '@/hooks/useUpcomingAssignments';
 import { useUpdateReadStatus } from '@/hooks/useUpdateReadStatus';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   CalendarDays, 
   CalendarCheck, 

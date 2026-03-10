@@ -42,6 +42,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
   const notes = assignment['notes'] || '';
   const productLink = assignment['product_link'] || '';
   
+  // Check if script name is or contains a URL
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const scriptNameIsUrl = scriptName.trim().match(/^https?:\/\/[^\s]+$/);
   const hasScript = scriptName.trim().length > 0;
   const hasScriptContent = scriptContent.trim().length > 0;
   const hasVideoStyle = videoStyle.trim().length > 0;

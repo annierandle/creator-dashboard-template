@@ -108,6 +108,8 @@ function parseCSV(csvText: string): Assignment[] {
 export function useAssignments(creatorId: string | null) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [yesterdayAssignments, setYesterdayAssignments] = useState<Assignment[]>([]);
+  const [twoDaysAgoAssignments, setTwoDaysAgoAssignments] = useState<Assignment[]>([]);
+  const [tomorrowAssignments, setTomorrowAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -120,10 +122,6 @@ export function useAssignments(creatorId: string | null) {
       setError(null);
 
       try {
-        console.log('=== ASSIGNMENT LOADING DEBUG ===');
-        console.log('Creator ID:', creatorId);
-        console.log('Fetching CSV from:', CSV_URL);
-
         const cacheBuster = `&_t=${Date.now()}`;
         const response = await fetch(CSV_URL + cacheBuster, {
           cache: 'no-store',
@@ -135,31 +133,20 @@ export function useAssignments(creatorId: string | null) {
         }
 
         const csvText = await response.text();
-        console.log('CSV fetched successfully, length:', csvText.length);
-        console.log('CSV preview:', csvText.substring(0, 200));
-
         const allRows = parseCSV(csvText);
-        console.log('Total parsed rows:', allRows.length);
-        console.log('First 3 rows:', allRows.slice(0, 3));
 
-        // Get today's date in PST timezone (YYYY-MM-DD format)
-        const todayPST = new Date().toLocaleDateString('en-CA', {
-          timeZone: 'America/Los_Angeles'
-        });
-        
-        // Get yesterday's date in PST timezone
-        const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const yesterdayPST = yesterdayDate.toLocaleDateString('en-CA', {
-          timeZone: 'America/Los_Angeles'
-        });
-        
-        console.log('Today in PST:', todayPST);
-        console.log('Yesterday in PST:', yesterdayPST);
+        const getDatePST = (daysOffset: number): string => {
+          const d = new Date();
+          d.setDate(d.getDate() + daysOffset);
+          return d.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+        };
 
-        // Normalize creator ID for comparison
+        const todayPST = getDatePST(0);
+        const yesterdayPST = getDatePST(-1);
+        const twoDaysAgoPST = getDatePST(-2);
+        const tomorrowPST = getDatePST(1);
+
         const normalizedCreatorId = (creatorId || '').trim().toLowerCase();
-        console.log('Looking for creator:', normalizedCreatorId);
 
         const filterByDate = (rows: Assignment[], targetDate: string) => {
           return rows.filter(row => {
@@ -171,14 +158,10 @@ export function useAssignments(creatorId: string | null) {
           });
         };
 
-        const todaysAssignments = filterByDate(allRows, todayPST);
-        const yesterdaysAssignments = filterByDate(allRows, yesterdayPST);
-
-        console.log('Today assignments:', todaysAssignments.length);
-        console.log('Yesterday assignments:', yesterdaysAssignments.length);
-
-        setAssignments(todaysAssignments);
-        setYesterdayAssignments(yesterdaysAssignments);
+        setAssignments(filterByDate(allRows, todayPST));
+        setYesterdayAssignments(filterByDate(allRows, yesterdayPST));
+        setTwoDaysAgoAssignments(filterByDate(allRows, twoDaysAgoPST));
+        setTomorrowAssignments(filterByDate(allRows, tomorrowPST));
       } catch (err: any) {
         console.error('Error loading assignments:', err);
         setError(err.message || 'Failed to load assignments');
@@ -190,5 +173,5 @@ export function useAssignments(creatorId: string | null) {
     fetchAssignments();
   }, [creatorId, refreshKey]);
 
-  return { assignments, yesterdayAssignments, loading, error, refetch };
+  return { assignments, yesterdayAssignments, twoDaysAgoAssignments, tomorrowAssignments, loading, error, refetch };
 }

@@ -44,8 +44,8 @@ const Index = () => {
 function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('hub');
-  const [dayView, setDayView] = useState<'today' | 'yesterday'>('today');
-  const { assignments, yesterdayAssignments, loading, error, refetch } = useAssignments(creatorId);
+  const [dayView, setDayView] = useState<'2days_ago' | 'yesterday' | 'today' | 'tomorrow'>('today');
+  const { assignments, yesterdayAssignments, twoDaysAgoAssignments, tomorrowAssignments, loading, error, refetch } = useAssignments(creatorId);
   
   const { isFilmed, toggleFilmed, filmedCount, allFilmed } = useFilmingProgress(
     creatorId, 
@@ -67,7 +67,23 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
     refetch();
   }, [refetch]);
 
-  const activeAssignments = dayView === 'today' ? assignments : yesterdayAssignments;
+  const activeAssignments = useMemo(() => {
+    switch (dayView) {
+      case '2days_ago': return twoDaysAgoAssignments;
+      case 'yesterday': return yesterdayAssignments;
+      case 'today': return assignments;
+      case 'tomorrow': return tomorrowAssignments;
+    }
+  }, [dayView, assignments, yesterdayAssignments, twoDaysAgoAssignments, tomorrowAssignments]);
+
+  const dayViewLabel = useMemo(() => {
+    switch (dayView) {
+      case '2days_ago': return '2 Days Ago';
+      case 'yesterday': return 'Yesterday';
+      case 'today': return 'Today';
+      case 'tomorrow': return 'Tomorrow';
+    }
+  }, [dayView]);
 
   const stats = useMemo(() => {
     const totalAssignments = activeAssignments.length;
@@ -163,31 +179,33 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
       <main className="container max-w-2xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="assignments" className="mt-0">
-            <div className="flex gap-2 mb-4">
-              <Button
-                variant={dayView === 'today' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDayView('today')}
-              >
-                Today
-              </Button>
-              <Button
-                variant={dayView === 'yesterday' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDayView('yesterday')}
-              >
-                Yesterday
-              </Button>
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+              {([
+                { key: '2days_ago' as const, label: '2 Days Ago' },
+                { key: 'yesterday' as const, label: 'Yesterday' },
+                { key: 'today' as const, label: 'Today' },
+                { key: 'tomorrow' as const, label: 'Tomorrow' },
+              ]).map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={dayView === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setDayView(key)}
+                  className="whitespace-nowrap"
+                >
+                  {label}
+                </Button>
+              ))}
             </div>
 
             <div className="mb-6 pb-4 border-b border-border/50">
               <h2 className="text-2xl font-bold text-foreground">
-                {dayView === 'today' ? 'My Assignments' : "Yesterday's Assignments"}
+                {dayView === 'today' ? 'My Assignments' : `${dayViewLabel}'s Assignments`}
               </h2>
               {!loading && activeAssignments.length > 0 && (
                 <>
                   <p className="text-sm text-muted-foreground mt-1">
-                    You have {stats.totalAssignments} total assignments {dayView === 'today' ? 'today' : 'from yesterday'} across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
+                    You have {stats.totalAssignments} total assignments {dayViewLabel.toLowerCase()} across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
                   </p>
                   
                   {dayView === 'today' && (
@@ -218,14 +236,14 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
             ) : error ? (
               <ErrorState message={error} />
             ) : activeAssignments.length === 0 ? (
-              dayView === 'yesterday' ? (
+              dayView !== 'today' ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                   <div className="rounded-full bg-primary/10 p-4 mb-4">
                     <CalendarDays className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No assignments yesterday</h3>
+                  <h3 className="text-lg font-semibold mb-2">No assignments {dayViewLabel.toLowerCase()}</h3>
                   <p className="text-muted-foreground text-sm max-w-xs">
-                    There were no assignments scheduled for yesterday.
+                    There are no assignments scheduled for {dayViewLabel.toLowerCase()}.
                   </p>
                 </div>
               ) : (

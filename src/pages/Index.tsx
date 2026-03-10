@@ -236,14 +236,14 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
             ) : error ? (
               <ErrorState message={error} />
             ) : activeAssignments.length === 0 ? (
-              dayView === 'yesterday' ? (
+              dayView !== 'today' ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                   <div className="rounded-full bg-primary/10 p-4 mb-4">
                     <CalendarDays className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">No assignments yesterday</h3>
+                  <h3 className="text-lg font-semibold mb-2">No assignments {dayViewLabel.toLowerCase()}</h3>
                   <p className="text-muted-foreground text-sm max-w-xs">
-                    There were no assignments scheduled for yesterday.
+                    There are no assignments scheduled for {dayViewLabel.toLowerCase()}.
                   </p>
                 </div>
               ) : (

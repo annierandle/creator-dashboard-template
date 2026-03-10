@@ -42,6 +42,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
   const notes = assignment['notes'] || '';
   const productLink = assignment['product_link'] || '';
   
+  // Check if script name is or contains a URL
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const scriptNameIsUrl = scriptName.trim().match(/^https?:\/\/[^\s]+$/);
   const hasScript = scriptName.trim().length > 0;
   const hasScriptContent = scriptContent.trim().length > 0;
   const hasVideoStyle = videoStyle.trim().length > 0;
@@ -156,10 +159,12 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
                           className="text-sm text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
                           aria-label={`View script: ${scriptName}`}
                         >
-                          📄 Script: {scriptName}
+                          📄 Script: {scriptNameIsUrl ? (
+                            <a href={scriptName} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80" onClick={e => e.stopPropagation()}>{scriptName}</a>
+                          ) : scriptName}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent 
+                      <PopoverContent
                         className="w-80 max-h-64 overflow-y-auto"
                         side="top"
                         align="start"
@@ -181,7 +186,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
                           className="text-sm text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
                           aria-label={`View script: ${scriptName}`}
                         >
-                          📄 Script: {scriptName}
+                          📄 Script: {scriptNameIsUrl ? (
+                            <a href={scriptName} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80" onClick={e => e.stopPropagation()}>{scriptName}</a>
+                          ) : scriptName}
                         </button>
                       </PopoverTrigger>
                       <PopoverContent 

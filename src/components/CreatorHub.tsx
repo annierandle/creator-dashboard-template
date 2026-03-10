@@ -187,7 +187,7 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
               <p className="text-sm text-muted-foreground">Loading...</p>
             ) : bonusOpportunities.length > 0 ? (
               <div className="space-y-3">
-                {bonusOpportunities.slice(0, 1).map((bonus, index) => (
+                {bonusOpportunities.map((bonus, index) => (
                   <div key={index} className="space-y-2">
                     <p className="text-sm font-medium text-foreground">{bonus.title}</p>
                     {bonus.content && (

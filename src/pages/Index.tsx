@@ -200,12 +200,12 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
 
             <div className="mb-6 pb-4 border-b border-border/50">
               <h2 className="text-2xl font-bold text-foreground">
-                {dayView === 'today' ? 'My Assignments' : "Yesterday's Assignments"}
+                {dayView === 'today' ? 'My Assignments' : `${dayViewLabel}'s Assignments`}
               </h2>
               {!loading && activeAssignments.length > 0 && (
                 <>
                   <p className="text-sm text-muted-foreground mt-1">
-                    You have {stats.totalAssignments} total assignments {dayView === 'today' ? 'today' : 'from yesterday'} across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
+                    You have {stats.totalAssignments} total assignments {dayViewLabel.toLowerCase()} across {stats.accountCount} accounts using {stats.uniqueProducts} unique products
                   </p>
                   
                   {dayView === 'today' && (

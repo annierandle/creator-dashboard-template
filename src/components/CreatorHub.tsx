@@ -217,31 +217,51 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
               <p className="text-sm text-muted-foreground">Loading...</p>
             ) : bonusOpportunities.length > 0 ? (
               <div className="space-y-3">
-                {bonusOpportunities.map((bonus, index) => (
-                  <div key={index} className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">{bonus.title}</p>
-                    {bonus.content && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{bonus.content}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      {bonus.date_posted && (
-                        <span className="text-xs text-muted-foreground/70">
-                          Posted: {formatDate(bonus.date_posted)}
-                        </span>
-                      )}
-                      {bonus.link && (
-                        <a 
-                          href={bonus.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline font-medium"
-                        >
-                          View Details →
-                        </a>
-                      )}
+                {bonusOpportunities.map((bonus, index) => {
+                  const done = isBonusDone(bonus.title);
+                  return (
+                    <div key={index} className={`space-y-2 p-3 rounded-lg border transition-all ${done ? 'bg-muted/40 border-border/50 opacity-70' : 'bg-background border-border'}`}>
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={!!done}
+                          onCheckedChange={() => toggleBonusComplete(bonus.title)}
+                          className="mt-0.5"
+                          aria-label={`Mark "${bonus.title}" as completed`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{bonus.title}</p>
+                          {bonus.content && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{bonus.content}</p>
+                          )}
+                          <div className="flex items-center justify-between mt-1.5">
+                            <div className="flex items-center gap-2">
+                              {bonus.date_posted && (
+                                <span className="text-xs text-muted-foreground/70">
+                                  Posted: {formatDate(bonus.date_posted)}
+                                </span>
+                              )}
+                              {done && (
+                                <span className="text-xs text-primary/70 font-medium">
+                                  ✓ Done by {done.by}
+                                </span>
+                              )}
+                            </div>
+                            {bonus.link && (
+                              <a 
+                                href={bonus.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline font-medium"
+                              >
+                                Example Video →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">

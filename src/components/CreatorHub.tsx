@@ -41,6 +41,11 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
   const { upcomingDays, loading: upcomingLoading } = useUpcomingAssignments(creatorName);
   const { isRead, markAsRead } = useUpdateReadStatus(creatorName, updates);
 
+  const displayName = useMemo(() => {
+    if (!creatorName) return 'Creator';
+    return creatorName.charAt(0).toUpperCase() + creatorName.slice(1).toLowerCase();
+  }, [creatorName]);
+
   // Bonus completion tracking
   const [bonusCompleted, setBonusCompleted] = useState<Record<string, { by: string; at: string }>>({});
 
@@ -69,11 +74,6 @@ export function CreatorHub({ creatorName, assignments, onGoToAssignments }: Crea
     const key = bonusTitle.replace(/\s+/g, '_').slice(0, 50);
     return bonusCompleted[key] || null;
   }, [bonusCompleted]);
-
-  const displayName = useMemo(() => {
-    if (!creatorName) return 'Creator';
-    return creatorName.charAt(0).toUpperCase() + creatorName.slice(1).toLowerCase();
-  }, [creatorName]);
 
   const stats = useMemo(() => {
     const totalAssignments = assignments.length;

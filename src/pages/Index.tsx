@@ -179,21 +179,23 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
       <main className="container max-w-2xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="assignments" className="mt-0">
-            <div className="flex gap-2 mb-4">
-              <Button
-                variant={dayView === 'today' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDayView('today')}
-              >
-                Today
-              </Button>
-              <Button
-                variant={dayView === 'yesterday' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDayView('yesterday')}
-              >
-                Yesterday
-              </Button>
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+              {([
+                { key: '2days_ago' as const, label: '2 Days Ago' },
+                { key: 'yesterday' as const, label: 'Yesterday' },
+                { key: 'today' as const, label: 'Today' },
+                { key: 'tomorrow' as const, label: 'Tomorrow' },
+              ]).map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={dayView === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setDayView(key)}
+                  className="whitespace-nowrap"
+                >
+                  {label}
+                </Button>
+              ))}
             </div>
 
             <div className="mb-6 pb-4 border-b border-border/50">

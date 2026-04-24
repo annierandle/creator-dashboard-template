@@ -199,7 +199,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
                             📄 {scriptName}
                           </h4>
                           <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                            {scriptContent}
+                            {renderTextWithLinks(scriptContent)}
                           </p>
                         </div>
                       </PopoverContent>

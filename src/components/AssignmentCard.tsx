@@ -152,7 +152,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
                   <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="end">
                     <div className="space-y-2">
                       <h4 className="font-semibold text-sm border-b pb-2">📝 Filming Note</h4>
-                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">{notes}</p>
+                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">{renderTextWithLinks(notes)}</p>
                     </div>
                   </PopoverContent>
                 </Popover>

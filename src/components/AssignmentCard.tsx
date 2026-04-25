@@ -356,20 +356,20 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
 
           <div className="space-y-1.5">
             {/* Script + Missing-product row (side-by-side when no script) */}
-            <div className={cn("flex flex-col sm:flex-row gap-2", !hasScript && "items-stretch")}>
+            <div className={cn("flex flex-col sm:flex-row gap-1.5", !hasScript && "items-stretch")}>
               {/* Script Status */}
               {hasScript ? (
-                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md flex-1">
-                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex items-start gap-2 px-2.5 py-1.5 bg-muted/40 rounded-md flex-1 min-w-0">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1">
                   {hasScriptContent ? (
                     <Popover>
                       <PopoverTrigger asChild>
                         <button 
-                          className="text-sm text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                          className="text-[13px] text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded truncate block w-full"
                           aria-label={`View script: ${scriptName}`}
                         >
-                          📄 Script: {scriptNameIsUrl ? (
+                          {scriptNameIsUrl ? (
                             <a href={scriptName} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80" onClick={e => e.stopPropagation()}>{scriptName}</a>
                           ) : scriptName}
                         </button>
@@ -393,10 +393,10 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                     <Popover>
                       <PopoverTrigger asChild>
                         <button 
-                          className="text-sm text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                          className="text-[13px] text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded truncate block w-full"
                           aria-label={`View script: ${scriptName}`}
                         >
-                          📄 Script: {scriptNameIsUrl ? (
+                          {scriptNameIsUrl ? (
                             <a href={scriptName} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80" onClick={e => e.stopPropagation()}>{scriptName}</a>
                           ) : scriptName}
                         </button>
@@ -420,9 +420,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border border-border/50 flex-1 min-w-0">
-                  <VolumeX className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground">🔇 No Script</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/30 rounded-md flex-1 min-w-0">
+                  <VolumeX className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-[13px] font-medium text-muted-foreground">No Script</span>
                 </div>
               )}
 
@@ -432,29 +432,24 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 onClick={() => handleMissingToggle(!isMissing)}
                 disabled={isMissing || submitting}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md border text-left text-sm transition-colors flex-1 min-w-0",
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-left text-[13px] transition-colors flex-1 min-w-0",
                   isMissing
-                    ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 cursor-default"
-                    : "bg-background border-border/60 text-muted-foreground hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-800 dark:hover:text-amber-200"
+                    ? "bg-amber-100/80 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 cursor-default"
+                    : "bg-background border-dashed border-border text-muted-foreground hover:border-solid hover:border-amber-300 hover:bg-amber-50/60 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-200"
                 )}
                 aria-pressed={isMissing}
                 aria-label={isMissing ? `Reported missing: ${productName}` : `Report missing: ${productName}`}
               >
                 {isMissing ? (
                   <>
-                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                     <span className="flex-1 font-medium truncate">Reported missing</span>
                   </>
                 ) : (
                   <>
-                    <Checkbox
-                      checked={false}
-                      className="h-4 w-4 pointer-events-none"
-                      tabIndex={-1}
-                      aria-hidden="true"
-                    />
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 opacity-60" />
                     <span className="flex-1 truncate">
-                      {submitting ? 'Sending…' : "I don't have this product"}
+                      {submitting ? 'Sending…' : "Missing product"}
                     </span>
                   </>
                 )}

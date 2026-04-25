@@ -21,7 +21,7 @@ export function RoleLandingPage() {
         <div className="grid gap-5 sm:grid-cols-2">
           {/* Creator Card */}
           <button
-            onClick={() => navigate('/?role=creator&id=demo')}
+            onClick={() => navigate('/?role=creator&id=sofia')}
             className="group relative flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-left shadow-sm transition-all duration-200 hover:shadow-lg hover:border-primary/40 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 transition-colors group-hover:bg-primary/20">

@@ -318,6 +318,40 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 </div>
               </div>
             )}
+
+            {/* Missing product report */}
+            <button
+              type="button"
+              onClick={() => handleMissingToggle(!isMissing)}
+              disabled={isMissing || submitting}
+              className={cn(
+                "w-full flex items-center gap-2 p-2.5 rounded-md border text-left text-sm transition-colors",
+                isMissing
+                  ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 cursor-default"
+                  : "bg-background border-border/60 text-muted-foreground hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-800 dark:hover:text-amber-200"
+              )}
+              aria-pressed={isMissing}
+              aria-label={isMissing ? `Reported missing: ${productName}` : `Report missing: ${productName}`}
+            >
+              {isMissing ? (
+                <>
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 font-medium">Reported as missing — Annie has been notified</span>
+                </>
+              ) : (
+                <>
+                  <Checkbox
+                    checked={false}
+                    className="h-4 w-4 pointer-events-none"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  />
+                  <span className="flex-1">
+                    {submitting ? 'Sending report…' : "I don't have this product"}
+                  </span>
+                </>
+              )}
+            </button>
           </CardContent>
         </div>
       </div>

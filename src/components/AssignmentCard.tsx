@@ -282,6 +282,74 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
     }
   };
 
+  const handleSaveExtra = async () => {
+    const value = parseInt(extraDraft, 10);
+    if (!Number.isFinite(value) || value < 1 || savingExtra) return;
+    setSavingExtra(true);
+    try {
+      if (extraReportId) {
+        const { error } = await supabase
+          .from('extra_video_reports')
+          .update({ extra_count: value })
+          .eq('id', extraReportId);
+        if (error) throw error;
+      } else {
+        const newId = crypto.randomUUID();
+        const { error } = await supabase
+          .from('extra_video_reports')
+          .insert({
+            id: newId,
+            creator_id: creatorId || null,
+            creator_name: creatorName || null,
+            account_name: accountName || null,
+            product_name: productName,
+            assignment_date: assignmentDate || null,
+            video_style: videoStyle || null,
+            assignment_order: assignmentOrder || null,
+            extra_count: value,
+          });
+        if (error) throw error;
+        localStorage.setItem(extraReportIdKey, newId);
+        setExtraReportId(newId);
+      }
+      localStorage.setItem(extraCountKey, String(value));
+      setExtraCount(value);
+      toast({
+        title: 'Extra versions logged',
+        description: `Recorded ${value} extra version${value === 1 ? '' : 's'} of "${productName}".`,
+      });
+    } catch (err) {
+      console.error('Failed to log extra versions', err);
+      toast({
+        title: 'Could not save',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingExtra(false);
+    }
+  };
+
+  const handleClearExtra = async () => {
+    if (!hasExtras) return;
+    try {
+      if (extraReportId) {
+        await supabase
+          .from('extra_video_reports')
+          .update({ extra_count: 0 })
+          .eq('id', extraReportId);
+      }
+      localStorage.removeItem(extraCountKey);
+      localStorage.removeItem(extraReportIdKey);
+      setExtraCount(0);
+      setExtraReportId(null);
+      setExtraDraft('');
+      toast({ title: 'Cleared', description: 'Extra versions removed.' });
+    } catch (err) {
+      console.error('Failed to clear extras', err);
+    }
+  };
+
   return (
     <Card 
       className={cn(

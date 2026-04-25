@@ -24,22 +24,22 @@ export function AccountGroup({
   assignmentDate,
 }: AccountGroupProps) {
   return (
-    <div className="space-y-3">
-      {/* Account Header */}
-      <div className="bg-muted/50 rounded-lg px-4 py-3 border border-border/50">
+    <div className="space-y-2">
+      {/* Account Header — sleek inline */}
+      <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold text-foreground">
+          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
             {accountName}
           </h2>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {assignments.length} assignment{assignments.length !== 1 ? 's' : ''} for today
-        </p>
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {assignments.length}
+        </span>
       </div>
 
       {/* Assignment Cards */}
-      <div className="space-y-3 pl-2">
+      <div className="space-y-1.5">
         {assignments.map((assignment, localIndex) => (
           <AssignmentCard 
             key={globalIndices[localIndex]} 

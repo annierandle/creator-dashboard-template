@@ -176,7 +176,7 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
         </div>
       </header>
 
-      <main className="container max-w-2xl mx-auto px-4 py-6">
+      <main className="container max-w-xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="assignments" className="mt-0">
             <div className="flex gap-2 mb-4 overflow-x-auto pb-1">

@@ -101,6 +101,45 @@ export type Database = {
         }
         Relationships: []
       }
+      extra_video_reports: {
+        Row: {
+          account_name: string | null
+          assignment_date: string | null
+          assignment_order: string | null
+          creator_id: string | null
+          creator_name: string | null
+          extra_count: number
+          id: string
+          product_name: string
+          reported_at: string
+          video_style: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          assignment_date?: string | null
+          assignment_order?: string | null
+          creator_id?: string | null
+          creator_name?: string | null
+          extra_count?: number
+          id?: string
+          product_name: string
+          reported_at?: string
+          video_style?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          assignment_date?: string | null
+          assignment_order?: string | null
+          creator_id?: string | null
+          creator_name?: string | null
+          extra_count?: number
+          id?: string
+          product_name?: string
+          reported_at?: string
+          video_style?: string | null
+        }
+        Relationships: []
+      }
       missing_product_reports: {
         Row: {
           account_name: string | null

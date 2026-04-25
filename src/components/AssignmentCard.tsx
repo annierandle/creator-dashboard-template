@@ -515,6 +515,73 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 </div>
               )}
 
+              {/* Extra versions — subtle icon trigger (left of missing) */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "shrink-0 inline-flex items-center justify-center h-7 rounded-md transition-colors",
+                      hasExtras
+                        ? "px-2 gap-1 text-[11px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100/70 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
+                        : "w-7 text-muted-foreground/50 hover:text-indigo-600 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/20"
+                    )}
+                    title="Log extra versions filmed"
+                    aria-label={`Log extra versions for ${productName}`}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {hasExtras && <span>+{extraCount}</span>}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" side="top" align="end">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-sm font-semibold">Extra versions filmed</h4>
+                      {hasExtras && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[11px] text-muted-foreground"
+                          onClick={handleClearExtra}
+                        >
+                          <X className="h-3 w-3 mr-0.5" />
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Banking extras for future posts? Log how many additional versions you filmed.
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={extraDraft}
+                        onChange={(e) => setExtraDraft(e.target.value)}
+                        placeholder="e.g. 2"
+                        className="h-8 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 px-2.5 text-[11px]"
+                        onClick={handleSaveExtra}
+                        disabled={
+                          savingExtra ||
+                          !extraDraft.trim() ||
+                          parseInt(extraDraft, 10) < 1 ||
+                          parseInt(extraDraft, 10) === extraCount
+                        }
+                      >
+                        {savingExtra ? '…' : extraCount > 0 ? 'Update' : 'Save'}
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               {/* Missing product — subtle icon trigger */}
               {!isMissing ? (
                 <button

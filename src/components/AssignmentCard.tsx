@@ -2,8 +2,11 @@ import { Assignment } from '@/types/assignment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, VolumeX, Check, StickyNote } from 'lucide-react';
+import { FileText, VolumeX, Check, StickyNote, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 // Renders text with any URLs converted into clickable hyperlinks
 function renderTextWithLinks(text: string) {
@@ -35,6 +38,9 @@ interface AssignmentCardProps {
   index: number;
   isFilmed: boolean;
   onToggleFilmed: (index: number) => void;
+  creatorId?: string;
+  creatorName?: string;
+  assignmentDate?: string;
 }
 
 // Video style color mapping (case-insensitive)
@@ -58,7 +64,7 @@ function getVideoStyleColor(style: string): string {
   }
 }
 
-export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: AssignmentCardProps) {
+export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, creatorId, creatorName, assignmentDate }: AssignmentCardProps) {
   const productName = assignment['product_name'] || 'Untitled Product';
   const videoStyle = assignment['video_style'] || '';
   const scriptName = assignment['script_name'] || '';
@@ -66,6 +72,15 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
   const assignmentOrder = assignment['assignment_order'] || '';
   const notes = assignment['notes'] || '';
   const productLink = assignment['product_link'] || '';
+  const accountName = (assignment as any)['account_name'] || '';
+
+  // Persist "missing product" state per assignment (so it survives reload)
+  const missingKey = `missing-product-${creatorId || 'anon'}-${assignmentDate || ''}-${productName}-${assignmentOrder}`;
+  const [isMissing, setIsMissing] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(missingKey) === '1';
+  });
+  const [submitting, setSubmitting] = useState(false);
   
   // Check if script name is or contains a URL
   const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -81,11 +96,67 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
     onToggleFilmed(index);
   };
 
+  const handleMissingToggle = async (checked: boolean) => {
+    if (!checked || isMissing || submitting) return;
+    setSubmitting(true);
+    try {
+      const { error: insertError } = await supabase
+        .from('missing_product_reports')
+        .insert({
+          creator_id: creatorId || null,
+          creator_name: creatorName || null,
+          account_name: accountName || null,
+          product_name: productName,
+          assignment_date: assignmentDate || null,
+          video_style: videoStyle || null,
+          assignment_order: assignmentOrder || null,
+          notes: notes || null,
+        });
+      if (insertError) throw insertError;
+
+      // Fire alert email — don't block UX on this
+      supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'missing-product-alert',
+          recipientEmail: 'annie.e.randle@gmail.com',
+          idempotencyKey: `missing-${missingKey}-${Date.now()}`,
+          templateData: {
+            creatorName: creatorName || 'Unknown creator',
+            accountName,
+            productName,
+            assignmentDate,
+            videoStyle,
+            assignmentOrder,
+            notes,
+            reportedAt: new Date().toISOString(),
+          },
+        },
+      }).catch((err) => console.error('Email alert failed', err));
+
+      localStorage.setItem(missingKey, '1');
+      setIsMissing(true);
+      toast({
+        title: 'Reported as missing',
+        description: `Annie has been notified about "${productName}".`,
+      });
+    } catch (err) {
+      console.error('Failed to report missing product', err);
+      toast({
+        title: 'Could not submit report',
+        description: 'Please try again in a moment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Card 
       className={cn(
         "assignment-card relative overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg",
-        isFilmed && "opacity-60 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+        isFilmed && "opacity-60 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800",
+        isMissing && "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800"
       )}
     >
       {/* Order Badge - Top Right */}
@@ -247,6 +318,40 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed }: 
                 </div>
               </div>
             )}
+
+            {/* Missing product report */}
+            <button
+              type="button"
+              onClick={() => handleMissingToggle(!isMissing)}
+              disabled={isMissing || submitting}
+              className={cn(
+                "w-full flex items-center gap-2 p-2.5 rounded-md border text-left text-sm transition-colors",
+                isMissing
+                  ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 cursor-default"
+                  : "bg-background border-border/60 text-muted-foreground hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-800 dark:hover:text-amber-200"
+              )}
+              aria-pressed={isMissing}
+              aria-label={isMissing ? `Reported missing: ${productName}` : `Report missing: ${productName}`}
+            >
+              {isMissing ? (
+                <>
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 font-medium">Reported as missing — Annie has been notified</span>
+                </>
+              ) : (
+                <>
+                  <Checkbox
+                    checked={false}
+                    className="h-4 w-4 pointer-events-none"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  />
+                  <span className="flex-1">
+                    {submitting ? 'Sending report…' : "I don't have this product"}
+                  </span>
+                </>
+              )}
+            </button>
           </CardContent>
         </div>
       </div>

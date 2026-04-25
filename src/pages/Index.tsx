@@ -260,6 +260,9 @@ function CreatorDashboard({ creatorId }: { creatorId: string | null }) {
                       globalIndices={globalIndicesMap[accountName]}
                       isFilmed={isFilmed}
                       onToggleFilmed={toggleFilmed}
+                      creatorId={creatorId}
+                      creatorName={displayName}
+                      assignmentDate={dayView}
                     />
                   ))}
                 </div>

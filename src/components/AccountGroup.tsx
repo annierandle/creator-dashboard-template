@@ -8,6 +8,9 @@ interface AccountGroupProps {
   globalIndices: number[];
   isFilmed: (index: number) => boolean;
   onToggleFilmed: (index: number) => void;
+  creatorId?: string | null;
+  creatorName?: string | null;
+  assignmentDate?: string;
 }
 
 export function AccountGroup({ 
@@ -15,7 +18,10 @@ export function AccountGroup({
   assignments, 
   globalIndices,
   isFilmed,
-  onToggleFilmed
+  onToggleFilmed,
+  creatorId,
+  creatorName,
+  assignmentDate,
 }: AccountGroupProps) {
   return (
     <div className="space-y-3">
@@ -41,6 +47,9 @@ export function AccountGroup({
             index={globalIndices[localIndex]}
             isFilmed={isFilmed(globalIndices[localIndex])}
             onToggleFilmed={onToggleFilmed}
+            creatorId={creatorId || undefined}
+            creatorName={creatorName || undefined}
+            assignmentDate={assignmentDate}
           />
         ))}
       </div>

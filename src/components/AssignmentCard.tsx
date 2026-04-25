@@ -51,8 +51,14 @@ function getVideoStyleColor(style: string): string {
   switch (normalizedStyle) {
     case 'bof face':
       return 'bg-blue-500';
+    case 'bof faceless':
+      return 'bg-cyan-500';
+    case 'mof':
+      return 'bg-violet-500';
+    case 'fashion account':
+      return 'bg-pink-500';
     case 'crying':
-      return 'bg-purple-400';
+      return 'bg-amber-500';
     case "i'm so mad":
     case 'im so mad':
       return 'bg-red-500';

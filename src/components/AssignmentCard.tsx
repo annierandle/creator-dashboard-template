@@ -515,7 +515,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 )}
               </div>
             )}
-          </CardContent>
+          </div>
         </div>
       </div>
     </Card>

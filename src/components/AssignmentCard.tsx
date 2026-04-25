@@ -345,17 +345,16 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 </PopoverContent>
               </Popover>
             )}
-          </div>
-
-          {/* Meta row: video style badge */}
-          {hasVideoStyle && (
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className={cn("h-1.5 w-1.5 rounded-full", getVideoStyleColor(videoStyle))} />
-              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {hasVideoStyle && (
+              <span
+                className="inline-flex items-center gap-1.5 h-5 px-2 rounded-full bg-muted/60 border border-border/60 text-[10px] font-medium uppercase tracking-wide text-muted-foreground shrink-0 mt-0.5"
+                title={`Video style: ${videoStyle}`}
+              >
+                <span className={cn("h-1.5 w-1.5 rounded-full", getVideoStyleColor(videoStyle))} />
                 {videoStyle}
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="space-y-1.5">
             {/* Script + subtle missing-product trigger */}

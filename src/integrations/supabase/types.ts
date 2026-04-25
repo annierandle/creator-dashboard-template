@@ -111,7 +111,10 @@ export type Database = {
           id: string
           notes: string | null
           product_name: string
+          replacement_product: string | null
           reported_at: string
+          resolution_note: string | null
+          resolved_at: string | null
           video_style: string | null
         }
         Insert: {
@@ -123,7 +126,10 @@ export type Database = {
           id?: string
           notes?: string | null
           product_name: string
+          replacement_product?: string | null
           reported_at?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
           video_style?: string | null
         }
         Update: {
@@ -135,7 +141,10 @@ export type Database = {
           id?: string
           notes?: string | null
           product_name?: string
+          replacement_product?: string | null
           reported_at?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
           video_style?: string | null
         }
         Relationships: []

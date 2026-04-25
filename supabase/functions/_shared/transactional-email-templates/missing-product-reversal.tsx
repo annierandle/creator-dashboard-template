@@ -13,40 +13,38 @@ import {
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
-interface MissingProductAlertProps {
+interface MissingProductReversalProps {
   creatorName?: string
   accountName?: string
   productName?: string
   assignmentDate?: string
   videoStyle?: string
   assignmentOrder?: string
-  notes?: string
-  reportedAt?: string
-  replacementProduct?: string
+  resolutionNote?: string
+  reversedAt?: string
 }
 
-const MissingProductAlertEmail = ({
+const MissingProductReversalEmail = ({
   creatorName,
   accountName,
   productName,
   assignmentDate,
   videoStyle,
   assignmentOrder,
-  notes,
-  reportedAt,
-  replacementProduct,
-}: MissingProductAlertProps) => (
+  resolutionNote,
+  reversedAt,
+}: MissingProductReversalProps) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>
-      Missing product reported{productName ? `: ${productName}` : ''}
+      Missing product update — found{productName ? `: ${productName}` : ''}
     </Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>🚨 Missing Product Reported</Heading>
+        <Heading style={h1}>✅ Missing Product — Resolved</Heading>
         <Text style={lead}>
-          {creatorName || 'A creator'} reported they don't have a product
-          assigned to them. Action may be required.
+          {creatorName || 'A creator'} updated a previous missing-product
+          report. The product has been found or the report was reversed.
         </Text>
 
         <Section style={card}>
@@ -56,13 +54,12 @@ const MissingProductAlertEmail = ({
           {assignmentDate ? <Row label="Assignment date" value={assignmentDate} /> : null}
           {assignmentOrder ? <Row label="Order #" value={`#${assignmentOrder}`} /> : null}
           {videoStyle ? <Row label="Video style" value={videoStyle} /> : null}
-          {replacementProduct ? <Row label="Replaced with" value={replacementProduct} /> : null}
-          {notes ? <Row label="Filming note" value={notes} /> : null}
+          {resolutionNote ? <Row label="Note" value={resolutionNote} /> : null}
         </Section>
 
         <Hr style={hr} />
         <Text style={footer}>
-          Reported at: {reportedAt || new Date().toISOString()}
+          Reversed at: {reversedAt || new Date().toISOString()}
         </Text>
       </Container>
     </Body>
@@ -85,10 +82,10 @@ const Row = ({
 )
 
 export const template = {
-  component: MissingProductAlertEmail,
+  component: MissingProductReversalEmail,
   subject: (data: Record<string, any>) =>
-    `🚨 Missing product: ${data.productName || 'Unknown'} (${data.creatorName || 'Creator'})`,
-  displayName: 'Missing product alert',
+    `✅ Missing product resolved: ${data.productName || 'Unknown'} (${data.creatorName || 'Creator'})`,
+  displayName: 'Missing product reversal',
   to: 'annie.e.randle@gmail.com',
   previewData: {
     creatorName: 'Jane Doe',
@@ -97,8 +94,8 @@ export const template = {
     assignmentDate: '2026-04-25',
     videoStyle: 'BOF Face',
     assignmentOrder: '3',
-    notes: 'Use the new packaging variant',
-    reportedAt: new Date().toISOString(),
+    resolutionNote: 'Found it in the back of the closet',
+    reversedAt: new Date().toISOString(),
   },
 } satisfies TemplateEntry
 
@@ -121,8 +118,8 @@ const lead = {
   margin: '0 0 20px',
 }
 const card = {
-  backgroundColor: '#f8fafc',
-  border: '1px solid #e2e8f0',
+  backgroundColor: '#f0fdf4',
+  border: '1px solid #bbf7d0',
   borderRadius: '8px',
   padding: '16px 20px',
 }
@@ -142,7 +139,7 @@ const rowValue = {
 }
 const rowValueHighlight = {
   fontSize: '16px',
-  color: '#dc2626',
+  color: '#16a34a',
   margin: 0,
   fontWeight: 'bold' as const,
 }

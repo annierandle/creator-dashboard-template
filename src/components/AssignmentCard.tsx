@@ -2,7 +2,9 @@ import { Assignment } from '@/types/assignment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, VolumeX, Check, StickyNote, AlertTriangle } from 'lucide-react';
+import { FileText, VolumeX, Check, StickyNote, AlertTriangle, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,11 +78,24 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
 
   // Persist "missing product" state per assignment (so it survives reload)
   const missingKey = `missing-product-${creatorId || 'anon'}-${assignmentDate || ''}-${productName}-${assignmentOrder}`;
+  const replacementKey = `${missingKey}::replacement`;
+  const reportIdKey = `${missingKey}::reportId`;
   const [isMissing, setIsMissing] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem(missingKey) === '1';
   });
   const [submitting, setSubmitting] = useState(false);
+  const [reportId, setReportId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(reportIdKey);
+  });
+  const [replacement, setReplacement] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem(replacementKey) || '';
+  });
+  const [replacementDraft, setReplacementDraft] = useState<string>(replacement);
+  const [savingReplacement, setSavingReplacement] = useState(false);
+  const [undoing, setUndoing] = useState(false);
   
   // Check if script name is or contains a URL
   const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -100,7 +115,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
     if (!checked || isMissing || submitting) return;
     setSubmitting(true);
     try {
-      const { error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from('missing_product_reports')
         .insert({
           creator_id: creatorId || null,
@@ -111,7 +126,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
           video_style: videoStyle || null,
           assignment_order: assignmentOrder || null,
           notes: notes || null,
-        });
+        })
+        .select('id')
+        .single();
       if (insertError) throw insertError;
 
       // Fire alert email — don't block UX on this
@@ -134,6 +151,10 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
       }).catch((err) => console.error('Email alert failed', err));
 
       localStorage.setItem(missingKey, '1');
+      if (inserted?.id) {
+        localStorage.setItem(reportIdKey, inserted.id);
+        setReportId(inserted.id);
+      }
       setIsMissing(true);
       toast({
         title: 'Reported as missing',
@@ -148,6 +169,95 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSaveReplacement = async () => {
+    const value = replacementDraft.trim();
+    if (!value || savingReplacement) return;
+    setSavingReplacement(true);
+    try {
+      if (reportId) {
+        const { error } = await supabase
+          .from('missing_product_reports')
+          .update({ replacement_product: value })
+          .eq('id', reportId);
+        if (error) throw error;
+      }
+      localStorage.setItem(replacementKey, value);
+      setReplacement(value);
+      toast({
+        title: 'Replacement noted',
+        description: `Recorded "${value}" as the replacement.`,
+      });
+    } catch (err) {
+      console.error('Failed to save replacement', err);
+      toast({
+        title: 'Could not save replacement',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingReplacement(false);
+    }
+  };
+
+  const handleUndoMissing = async () => {
+    if (!isMissing || undoing) return;
+    setUndoing(true);
+    try {
+      if (reportId) {
+        const { error } = await supabase
+          .from('missing_product_reports')
+          .update({
+            resolved_at: new Date().toISOString(),
+            resolution_note: 'Reversed by creator',
+          })
+          .eq('id', reportId);
+        if (error) throw error;
+      }
+
+      // Fire reversal email
+      supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'missing-product-reversal',
+          recipientEmail: 'annie.e.randle@gmail.com',
+          idempotencyKey: `missing-reversal-${missingKey}-${Date.now()}`,
+          templateData: {
+            creatorName: creatorName || 'Unknown creator',
+            accountName,
+            productName,
+            assignmentDate,
+            videoStyle,
+            assignmentOrder,
+            resolutionNote: replacement
+              ? `Was replaced with: ${replacement}`
+              : 'Reversed by creator',
+            reversedAt: new Date().toISOString(),
+          },
+        },
+      }).catch((err) => console.error('Reversal email failed', err));
+
+      localStorage.removeItem(missingKey);
+      localStorage.removeItem(replacementKey);
+      localStorage.removeItem(reportIdKey);
+      setIsMissing(false);
+      setReplacement('');
+      setReplacementDraft('');
+      setReportId(null);
+      toast({
+        title: 'Report reversed',
+        description: `Annie has been notified that "${productName}" is found.`,
+      });
+    } catch (err) {
+      console.error('Failed to reverse report', err);
+      toast({
+        title: 'Could not reverse report',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUndoing(false);
     }
   };
 
@@ -243,11 +353,13 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
           </CardHeader>
 
           <CardContent className="space-y-2 pt-0">
-            {/* Script Status */}
-            {hasScript ? (
-              <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md">
-                <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div className="flex-1">
+            {/* Script + Missing-product row (side-by-side when no script) */}
+            <div className={cn("flex flex-col sm:flex-row gap-2", !hasScript && "items-stretch")}>
+              {/* Script Status */}
+              {hasScript ? (
+                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md flex-1">
+                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="flex-1">
                   {hasScriptContent ? (
                     <Popover>
                       <PopoverTrigger asChild>
@@ -303,55 +415,103 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                       </PopoverContent>
                     </Popover>
                   )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-md border border-border/50">
-                <VolumeX className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <span className="text-sm text-muted-foreground">
-                    🔇 Silent Video - No Script Needed
-                  </span>
-                  <p className="text-xs text-muted-foreground/70 mt-0.5">
-                    Film this video without voiceover or talking
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border border-border/50 flex-1 min-w-0">
+                  <VolumeX className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground">🔇 No Script</span>
+                </div>
+              )}
+
+              {/* Missing product report — compact, side-by-side with script when no script */}
+              <button
+                type="button"
+                onClick={() => handleMissingToggle(!isMissing)}
+                disabled={isMissing || submitting}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md border text-left text-sm transition-colors flex-1 min-w-0",
+                  isMissing
+                    ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 cursor-default"
+                    : "bg-background border-border/60 text-muted-foreground hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-800 dark:hover:text-amber-200"
+                )}
+                aria-pressed={isMissing}
+                aria-label={isMissing ? `Reported missing: ${productName}` : `Report missing: ${productName}`}
+              >
+                {isMissing ? (
+                  <>
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 font-medium truncate">Reported missing</span>
+                  </>
+                ) : (
+                  <>
+                    <Checkbox
+                      checked={false}
+                      className="h-4 w-4 pointer-events-none"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+                    <span className="flex-1 truncate">
+                      {submitting ? 'Sending…' : "I don't have this product"}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Missing-state details: replacement + undo */}
+            {isMissing && (
+              <div className="space-y-2 p-2.5 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/20">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-amber-900 dark:text-amber-200">
+                    Annie has been notified
                   </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-amber-900 dark:text-amber-200 hover:bg-amber-200/60 dark:hover:bg-amber-900/40"
+                    onClick={handleUndoMissing}
+                    disabled={undoing}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    {undoing ? 'Undoing…' : 'Undo'}
+                  </Button>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={replacementDraft}
+                    onChange={(e) => setReplacementDraft(e.target.value)}
+                    placeholder="Replaced with… (e.g. product name)"
+                    className="h-8 text-sm bg-background"
+                    maxLength={200}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 px-3 text-xs"
+                    onClick={handleSaveReplacement}
+                    disabled={
+                      savingReplacement ||
+                      !replacementDraft.trim() ||
+                      replacementDraft.trim() === replacement
+                    }
+                  >
+                    {savingReplacement
+                      ? 'Saving…'
+                      : replacement && replacement === replacementDraft.trim()
+                      ? 'Saved'
+                      : 'Save'}
+                  </Button>
+                </div>
+                {replacement && (
+                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
+                    Currently saved: <span className="font-medium">{replacement}</span>
+                  </p>
+                )}
               </div>
             )}
-
-            {/* Missing product report */}
-            <button
-              type="button"
-              onClick={() => handleMissingToggle(!isMissing)}
-              disabled={isMissing || submitting}
-              className={cn(
-                "w-full flex items-center gap-2 p-2.5 rounded-md border text-left text-sm transition-colors",
-                isMissing
-                  ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 cursor-default"
-                  : "bg-background border-border/60 text-muted-foreground hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-800 dark:hover:text-amber-200"
-              )}
-              aria-pressed={isMissing}
-              aria-label={isMissing ? `Reported missing: ${productName}` : `Report missing: ${productName}`}
-            >
-              {isMissing ? (
-                <>
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  <span className="flex-1 font-medium">Reported as missing — Annie has been notified</span>
-                </>
-              ) : (
-                <>
-                  <Checkbox
-                    checked={false}
-                    className="h-4 w-4 pointer-events-none"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                  />
-                  <span className="flex-1">
-                    {submitting ? 'Sending report…' : "I don't have this product"}
-                  </span>
-                </>
-              )}
-            </button>
           </CardContent>
         </div>
       </div>

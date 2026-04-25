@@ -85,6 +85,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
   const missingKey = `missing-product-${creatorId || 'anon'}-${assignmentDate || ''}-${productName}-${assignmentOrder}`;
   const replacementKey = `${missingKey}::replacement`;
   const reportIdKey = `${missingKey}::reportId`;
+  const extraKey = `extra-versions-${creatorId || 'anon'}-${assignmentDate || ''}-${productName}-${assignmentOrder}`;
+  const extraCountKey = `${extraKey}::count`;
+  const extraReportIdKey = `${extraKey}::reportId`;
   const [isMissing, setIsMissing] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem(missingKey) === '1';
@@ -101,6 +104,22 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
   const [replacementDraft, setReplacementDraft] = useState<string>(replacement);
   const [savingReplacement, setSavingReplacement] = useState(false);
   const [undoing, setUndoing] = useState(false);
+
+  // Extra versions filmed (banking)
+  const [extraCount, setExtraCount] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    const v = parseInt(localStorage.getItem(extraCountKey) || '0', 10);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  });
+  const [extraReportId, setExtraReportId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(extraReportIdKey);
+  });
+  const [extraDraft, setExtraDraft] = useState<string>(() =>
+    extraCount > 0 ? String(extraCount) : ''
+  );
+  const [savingExtra, setSavingExtra] = useState(false);
+  const hasExtras = extraCount > 0;
   
   // Check if script name is or contains a URL
   const scriptNameIsUrl = scriptName.trim().match(/^https?:\/\/[^\s]+$/);

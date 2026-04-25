@@ -119,9 +119,11 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
     if (!checked || isMissing || submitting) return;
     setSubmitting(true);
     try {
-      const { data: inserted, error: insertError } = await supabase
+      const newReportId = crypto.randomUUID();
+      const { error: insertError } = await supabase
         .from('missing_product_reports')
         .insert({
+          id: newReportId,
           creator_id: creatorId || null,
           creator_name: creatorName || null,
           account_name: accountName || null,
@@ -130,9 +132,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
           video_style: videoStyle || null,
           assignment_order: assignmentOrder || null,
           notes: notes || null,
-        })
-        .select('id')
-        .single();
+        });
       if (insertError) throw insertError;
 
       // Fire alert email — don't block UX on this
@@ -155,10 +155,8 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
       }).catch((err) => console.error('Email alert failed', err));
 
       localStorage.setItem(missingKey, '1');
-      if (inserted?.id) {
-        localStorage.setItem(reportIdKey, inserted.id);
-        setReportId(inserted.id);
-      }
+      localStorage.setItem(reportIdKey, newReportId);
+      setReportId(newReportId);
       setIsMissing(true);
       toast({
         title: 'Reported as missing',

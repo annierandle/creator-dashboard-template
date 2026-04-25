@@ -1,7 +1,7 @@
 import { Assignment } from '@/types/assignment';
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, VolumeX, Check, StickyNote, AlertTriangle, X } from 'lucide-react';
+import { FileText, VolumeX, Check, StickyNote, AlertTriangle, X, Copy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

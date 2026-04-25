@@ -1,7 +1,7 @@
 import { Assignment } from '@/types/assignment';
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, VolumeX, Check, StickyNote, AlertTriangle, X } from 'lucide-react';
+import { FileText, VolumeX, Check, StickyNote, AlertTriangle, X, Copy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -85,6 +85,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
   const missingKey = `missing-product-${creatorId || 'anon'}-${assignmentDate || ''}-${productName}-${assignmentOrder}`;
   const replacementKey = `${missingKey}::replacement`;
   const reportIdKey = `${missingKey}::reportId`;
+  const extraKey = `extra-versions-${creatorId || 'anon'}-${assignmentDate || ''}-${productName}-${assignmentOrder}`;
+  const extraCountKey = `${extraKey}::count`;
+  const extraReportIdKey = `${extraKey}::reportId`;
   const [isMissing, setIsMissing] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem(missingKey) === '1';
@@ -101,6 +104,22 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
   const [replacementDraft, setReplacementDraft] = useState<string>(replacement);
   const [savingReplacement, setSavingReplacement] = useState(false);
   const [undoing, setUndoing] = useState(false);
+
+  // Extra versions filmed (banking)
+  const [extraCount, setExtraCount] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    const v = parseInt(localStorage.getItem(extraCountKey) || '0', 10);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  });
+  const [extraReportId, setExtraReportId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(extraReportIdKey);
+  });
+  const [extraDraft, setExtraDraft] = useState<string>(() =>
+    extraCount > 0 ? String(extraCount) : ''
+  );
+  const [savingExtra, setSavingExtra] = useState(false);
+  const hasExtras = extraCount > 0;
   
   // Check if script name is or contains a URL
   const scriptNameIsUrl = scriptName.trim().match(/^https?:\/\/[^\s]+$/);
@@ -263,6 +282,74 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
     }
   };
 
+  const handleSaveExtra = async () => {
+    const value = parseInt(extraDraft, 10);
+    if (!Number.isFinite(value) || value < 1 || savingExtra) return;
+    setSavingExtra(true);
+    try {
+      if (extraReportId) {
+        const { error } = await supabase
+          .from('extra_video_reports')
+          .update({ extra_count: value })
+          .eq('id', extraReportId);
+        if (error) throw error;
+      } else {
+        const newId = crypto.randomUUID();
+        const { error } = await supabase
+          .from('extra_video_reports')
+          .insert({
+            id: newId,
+            creator_id: creatorId || null,
+            creator_name: creatorName || null,
+            account_name: accountName || null,
+            product_name: productName,
+            assignment_date: assignmentDate || null,
+            video_style: videoStyle || null,
+            assignment_order: assignmentOrder || null,
+            extra_count: value,
+          });
+        if (error) throw error;
+        localStorage.setItem(extraReportIdKey, newId);
+        setExtraReportId(newId);
+      }
+      localStorage.setItem(extraCountKey, String(value));
+      setExtraCount(value);
+      toast({
+        title: 'Extra versions logged',
+        description: `Recorded ${value} extra version${value === 1 ? '' : 's'} of "${productName}".`,
+      });
+    } catch (err) {
+      console.error('Failed to log extra versions', err);
+      toast({
+        title: 'Could not save',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingExtra(false);
+    }
+  };
+
+  const handleClearExtra = async () => {
+    if (!hasExtras) return;
+    try {
+      if (extraReportId) {
+        await supabase
+          .from('extra_video_reports')
+          .update({ extra_count: 0 })
+          .eq('id', extraReportId);
+      }
+      localStorage.removeItem(extraCountKey);
+      localStorage.removeItem(extraReportIdKey);
+      setExtraCount(0);
+      setExtraReportId(null);
+      setExtraDraft('');
+      toast({ title: 'Cleared', description: 'Extra versions removed.' });
+    } catch (err) {
+      console.error('Failed to clear extras', err);
+    }
+  };
+
   return (
     <Card 
       className={cn(
@@ -330,7 +417,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="inline-flex items-center gap-1.5 h-5 px-2 rounded-full bg-muted/60 border border-border/60 text-[10px] font-medium uppercase tracking-wide text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0 mt-0.5"
+                    className="inline-flex items-center gap-1.5 h-5 px-2 rounded-full bg-rose-50 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-900/50 text-[10px] font-semibold uppercase tracking-wide text-rose-600 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors shrink-0 mt-0.5"
                     aria-label="View filming note"
                   >
                     <StickyNote className="h-2.5 w-2.5" />
@@ -427,6 +514,73 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                   <span className="text-[13px] font-medium text-muted-foreground">No Script</span>
                 </div>
               )}
+
+              {/* Extra versions — subtle icon trigger (left of missing) */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "shrink-0 inline-flex items-center justify-center h-7 rounded-md transition-colors",
+                      hasExtras
+                        ? "px-2 gap-1 text-[11px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100/70 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
+                        : "w-7 text-muted-foreground/50 hover:text-indigo-600 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/20"
+                    )}
+                    title="Log extra versions filmed"
+                    aria-label={`Log extra versions for ${productName}`}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {hasExtras && <span>+{extraCount}</span>}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" side="top" align="end">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="text-sm font-semibold">Extra versions filmed</h4>
+                      {hasExtras && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[11px] text-muted-foreground"
+                          onClick={handleClearExtra}
+                        >
+                          <X className="h-3 w-3 mr-0.5" />
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Banking extras for future posts? Log how many additional versions you filmed.
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={extraDraft}
+                        onChange={(e) => setExtraDraft(e.target.value)}
+                        placeholder="e.g. 2"
+                        className="h-8 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 px-2.5 text-[11px]"
+                        onClick={handleSaveExtra}
+                        disabled={
+                          savingExtra ||
+                          !extraDraft.trim() ||
+                          parseInt(extraDraft, 10) < 1 ||
+                          parseInt(extraDraft, 10) === extraCount
+                        }
+                      >
+                        {savingExtra ? '…' : extraCount > 0 ? 'Update' : 'Save'}
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
               {/* Missing product — subtle icon trigger */}
               {!isMissing ? (

@@ -330,7 +330,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-300 rounded-md text-[10px] font-medium hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors shrink-0 border border-rose-200/60 dark:border-rose-900/40"
+                    className="inline-flex items-center gap-1.5 h-5 px-2 rounded-full bg-muted/60 border border-border/60 text-[10px] font-medium uppercase tracking-wide text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0 mt-0.5"
                     aria-label="View filming note"
                   >
                     <StickyNote className="h-2.5 w-2.5" />

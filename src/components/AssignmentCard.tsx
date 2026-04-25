@@ -1,6 +1,5 @@
 import { Assignment } from '@/types/assignment';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { FileText, VolumeX, Check, StickyNote, AlertTriangle, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -98,7 +97,6 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
   const [undoing, setUndoing] = useState(false);
   
   // Check if script name is or contains a URL
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
   const scriptNameIsUrl = scriptName.trim().match(/^https?:\/\/[^\s]+$/);
   const hasScript = scriptName.trim().length > 0;
   const hasScriptContent = scriptContent.trim().length > 0;
@@ -264,110 +262,113 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
   return (
     <Card 
       className={cn(
-        "assignment-card relative overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg",
-        isFilmed && "opacity-60 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800",
-        isMissing && "bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800"
+        "group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 hover:border-border hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.08)]",
+        isFilmed && "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-200/70 dark:border-emerald-900/50",
+        isMissing && "bg-amber-50/50 dark:bg-amber-950/10 border-amber-200/80 dark:border-amber-900/50"
       )}
     >
-      {/* Order Badge - Top Right */}
-      {hasOrder && (
-        <div className="absolute top-3 right-3 z-10">
-          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-primary flex items-center justify-center shadow-md">
-            <span className="text-[10px] sm:text-sm font-bold text-primary-foreground">
-              #{assignmentOrder}
-            </span>
-          </div>
-        </div>
+      {/* Subtle accent stripe for video style */}
+      {hasVideoStyle && (
+        <div className={cn("absolute left-0 top-0 bottom-0 w-[3px]", getVideoStyleColor(videoStyle))} aria-hidden />
       )}
 
-      {/* Filmed Indicator - Top Left when filmed */}
-      {isFilmed && (
-        <div className="absolute top-3 left-14 z-10">
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-green-500 text-white rounded-full text-xs font-medium">
-            <Check className="h-3 w-3" />
-            Filmed
-          </div>
-        </div>
-      )}
-
-      <div className="flex">
-        {/* Checkbox Column */}
-        <div className="flex items-center justify-center px-3 py-4 border-r border-border/50">
-          <Checkbox
-            checked={isFilmed}
-            onCheckedChange={handleCheckboxChange}
-            className="h-8 w-8 rounded-md border-2 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-            aria-label={`Mark ${productName} as filmed`}
-          />
-        </div>
-
-        {/* Card Content */}
-        <div className="flex-1">
-          <CardHeader className="pb-2 pr-14">
-            <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-lg font-semibold leading-tight">
-                {hasProductLink ? (
-                  <a
-                    href={productLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-                  >
-                    {productName}
-                  </a>
-                ) : (
-                  productName
-                )}
-              </CardTitle>
-              {hasNotes && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-[11px] font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors cursor-pointer shadow-sm border border-red-200/60 dark:border-red-700/40 shrink-0 whitespace-nowrap"
-                      aria-label="View filming note"
-                    >
-                      <StickyNote className="h-3 w-3" />
-                      filming note
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="end">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm border-b pb-2">📝 Filming Note</h4>
-                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">{renderTextWithLinks(notes)}</p>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              )}
-            </div>
-            
-            {/* Video Style Badge */}
-            {hasVideoStyle && (
-              <div className="mt-2">
-                <span 
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getVideoStyleColor(videoStyle)}`}
-                >
-                  {videoStyle}
-                </span>
-              </div>
+      <div className="flex items-stretch">
+        {/* Checkbox Column - tighter */}
+        <button
+          type="button"
+          onClick={handleCheckboxChange}
+          className={cn(
+            "flex items-center justify-center px-3 py-3 transition-colors shrink-0",
+            "hover:bg-muted/40",
+            isFilmed && "bg-emerald-100/40 dark:bg-emerald-900/20"
+          )}
+          aria-label={`Mark ${productName} as filmed`}
+        >
+          <div
+            className={cn(
+              "h-6 w-6 rounded-md border-2 flex items-center justify-center transition-all",
+              isFilmed
+                ? "bg-emerald-500 border-emerald-500 shadow-sm"
+                : "border-border bg-background group-hover:border-foreground/40"
             )}
-          </CardHeader>
+          >
+            {isFilmed && <Check className="h-4 w-4 text-white stroke-[3]" />}
+          </div>
+        </button>
 
-          <CardContent className="space-y-2 pt-0">
+        {/* Card Content - tighter padding */}
+        <div className="flex-1 min-w-0 px-3.5 py-2.5">
+          {/* Top row: order + title + notes */}
+          <div className="flex items-start gap-2 mb-1.5">
+            {hasOrder && (
+              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-md bg-foreground/5 text-foreground/70 text-[11px] font-semibold tabular-nums leading-none shrink-0 mt-0.5">
+                {assignmentOrder}
+              </span>
+            )}
+            <h3 className={cn(
+              "flex-1 text-[15px] font-semibold leading-snug tracking-tight text-foreground min-w-0",
+              isFilmed && "line-through text-muted-foreground"
+            )}>
+              {hasProductLink ? (
+                <a
+                  href={productLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline underline-offset-2 transition-colors"
+                >
+                  {productName}
+                </a>
+              ) : (
+                productName
+              )}
+            </h3>
+            {hasNotes && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-300 rounded-md text-[10px] font-medium hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors shrink-0 border border-rose-200/60 dark:border-rose-900/40"
+                    aria-label="View filming note"
+                  >
+                    <StickyNote className="h-2.5 w-2.5" />
+                    note
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 max-h-64 overflow-y-auto" side="top" align="end">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm border-b pb-2">📝 Filming Note</h4>
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">{renderTextWithLinks(notes)}</p>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+
+          {/* Meta row: video style badge */}
+          {hasVideoStyle && (
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className={cn("h-1.5 w-1.5 rounded-full", getVideoStyleColor(videoStyle))} />
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {videoStyle}
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
             {/* Script + Missing-product row (side-by-side when no script) */}
-            <div className={cn("flex flex-col sm:flex-row gap-2", !hasScript && "items-stretch")}>
+            <div className={cn("flex flex-col sm:flex-row gap-1.5", !hasScript && "items-stretch")}>
               {/* Script Status */}
               {hasScript ? (
-                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-md flex-1">
-                  <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex items-start gap-2 px-2.5 py-1.5 bg-muted/40 rounded-md flex-1 min-w-0">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1">
                   {hasScriptContent ? (
                     <Popover>
                       <PopoverTrigger asChild>
                         <button 
-                          className="text-sm text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                          className="text-[13px] text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded truncate block w-full"
                           aria-label={`View script: ${scriptName}`}
                         >
-                          📄 Script: {scriptNameIsUrl ? (
+                          {scriptNameIsUrl ? (
                             <a href={scriptName} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80" onClick={e => e.stopPropagation()}>{scriptName}</a>
                           ) : scriptName}
                         </button>
@@ -391,10 +392,10 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                     <Popover>
                       <PopoverTrigger asChild>
                         <button 
-                          className="text-sm text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                          className="text-[13px] text-foreground text-left hover:text-primary hover:underline cursor-pointer transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded truncate block w-full"
                           aria-label={`View script: ${scriptName}`}
                         >
-                          📄 Script: {scriptNameIsUrl ? (
+                          {scriptNameIsUrl ? (
                             <a href={scriptName} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80" onClick={e => e.stopPropagation()}>{scriptName}</a>
                           ) : scriptName}
                         </button>
@@ -418,9 +419,9 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-md border border-border/50 flex-1 min-w-0">
-                  <VolumeX className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground">🔇 No Script</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/30 rounded-md flex-1 min-w-0">
+                  <VolumeX className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-[13px] font-medium text-muted-foreground">No Script</span>
                 </div>
               )}
 
@@ -430,29 +431,24 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 onClick={() => handleMissingToggle(!isMissing)}
                 disabled={isMissing || submitting}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md border text-left text-sm transition-colors flex-1 min-w-0",
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-left text-[13px] transition-colors flex-1 min-w-0",
                   isMissing
-                    ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 cursor-default"
-                    : "bg-background border-border/60 text-muted-foreground hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-800 dark:hover:text-amber-200"
+                    ? "bg-amber-100/80 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 cursor-default"
+                    : "bg-background border-dashed border-border text-muted-foreground hover:border-solid hover:border-amber-300 hover:bg-amber-50/60 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-200"
                 )}
                 aria-pressed={isMissing}
                 aria-label={isMissing ? `Reported missing: ${productName}` : `Report missing: ${productName}`}
               >
                 {isMissing ? (
                   <>
-                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                     <span className="flex-1 font-medium truncate">Reported missing</span>
                   </>
                 ) : (
                   <>
-                    <Checkbox
-                      checked={false}
-                      className="h-4 w-4 pointer-events-none"
-                      tabIndex={-1}
-                      aria-hidden="true"
-                    />
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 opacity-60" />
                     <span className="flex-1 truncate">
-                      {submitting ? 'Sending…' : "I don't have this product"}
+                      {submitting ? 'Sending…' : "Missing product"}
                     </span>
                   </>
                 )}
@@ -512,7 +508,7 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 )}
               </div>
             )}
-          </CardContent>
+          </div>
         </div>
       </div>
     </Card>

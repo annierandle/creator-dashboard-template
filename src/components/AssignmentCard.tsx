@@ -1,5 +1,5 @@
 import { Assignment } from '@/types/assignment';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { FileText, VolumeX, Check, StickyNote, AlertTriangle, X } from 'lucide-react';
@@ -98,7 +98,6 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
   const [undoing, setUndoing] = useState(false);
   
   // Check if script name is or contains a URL
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
   const scriptNameIsUrl = scriptName.trim().match(/^https?:\/\/[^\s]+$/);
   const hasScript = scriptName.trim().length > 0;
   const hasScriptContent = scriptContent.trim().length > 0;

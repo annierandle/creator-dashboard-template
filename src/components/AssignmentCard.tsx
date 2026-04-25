@@ -51,8 +51,14 @@ function getVideoStyleColor(style: string): string {
   switch (normalizedStyle) {
     case 'bof face':
       return 'bg-blue-500';
+    case 'bof faceless':
+      return 'bg-cyan-500';
+    case 'mof':
+      return 'bg-violet-500';
+    case 'fashion account':
+      return 'bg-pink-500';
     case 'crying':
-      return 'bg-purple-400';
+      return 'bg-amber-500';
     case "i'm so mad":
     case 'im so mad':
       return 'bg-red-500';
@@ -354,8 +360,8 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
           )}
 
           <div className="space-y-1.5">
-            {/* Script + Missing-product row (side-by-side when no script) */}
-            <div className={cn("flex flex-col sm:flex-row gap-1.5", !hasScript && "items-stretch")}>
+            {/* Script + subtle missing-product trigger */}
+            <div className="flex items-center gap-1.5">
               {/* Script Status */}
               {hasScript ? (
                 <div className="flex items-start gap-2 px-2.5 py-1.5 bg-muted/40 rounded-md flex-1 min-w-0">
@@ -425,89 +431,85 @@ export function AssignmentCard({ assignment, index, isFilmed, onToggleFilmed, cr
                 </div>
               )}
 
-              {/* Missing product report — compact, side-by-side with script when no script */}
-              <button
-                type="button"
-                onClick={() => handleMissingToggle(!isMissing)}
-                disabled={isMissing || submitting}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-left text-[13px] transition-colors flex-1 min-w-0",
-                  isMissing
-                    ? "bg-amber-100/80 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 cursor-default"
-                    : "bg-background border-dashed border-border text-muted-foreground hover:border-solid hover:border-amber-300 hover:bg-amber-50/60 dark:hover:bg-amber-950/20 hover:text-amber-700 dark:hover:text-amber-200"
-                )}
-                aria-pressed={isMissing}
-                aria-label={isMissing ? `Reported missing: ${productName}` : `Report missing: ${productName}`}
-              >
-                {isMissing ? (
-                  <>
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span className="flex-1 font-medium truncate">Reported missing</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                    <span className="flex-1 truncate">
-                      {submitting ? 'Sending…' : "Missing product"}
-                    </span>
-                  </>
-                )}
-              </button>
+              {/* Missing product — subtle icon trigger */}
+              {!isMissing ? (
+                <button
+                  type="button"
+                  onClick={() => handleMissingToggle(true)}
+                  disabled={submitting}
+                  className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground/50 hover:text-amber-600 hover:bg-amber-50/60 dark:hover:bg-amber-950/20 transition-colors"
+                  title="Report missing product"
+                  aria-label={`Report missing: ${productName}`}
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="shrink-0 inline-flex items-center gap-1 h-7 px-2 rounded-md text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+                      aria-label="Missing product details"
+                    >
+                      <AlertTriangle className="h-3 w-3" />
+                      Missing
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72" side="top" align="end">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold">Missing product</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[11px] text-muted-foreground"
+                          onClick={handleUndoMissing}
+                          disabled={undoing}
+                        >
+                          <X className="h-3 w-3 mr-0.5" />
+                          {undoing ? 'Undoing…' : 'Undo'}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Annie has been notified. Optionally note what you replaced it with.
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          value={replacementDraft}
+                          onChange={(e) => setReplacementDraft(e.target.value)}
+                          placeholder="Replaced with…"
+                          className="h-8 text-xs"
+                          maxLength={200}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8 px-2.5 text-[11px]"
+                          onClick={handleSaveReplacement}
+                          disabled={
+                            savingReplacement ||
+                            !replacementDraft.trim() ||
+                            replacementDraft.trim() === replacement
+                          }
+                        >
+                          {savingReplacement
+                            ? '…'
+                            : replacement && replacement === replacementDraft.trim()
+                            ? 'Saved'
+                            : 'Save'}
+                        </Button>
+                      </div>
+                      {replacement && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Saved: <span className="font-medium text-foreground">{replacement}</span>
+                        </p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
-
-            {/* Missing-state details: replacement + undo */}
-            {isMissing && (
-              <div className="space-y-2 p-2.5 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/20">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-medium text-amber-900 dark:text-amber-200">
-                    Annie has been notified
-                  </p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-amber-900 dark:text-amber-200 hover:bg-amber-200/60 dark:hover:bg-amber-900/40"
-                    onClick={handleUndoMissing}
-                    disabled={undoing}
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    {undoing ? 'Undoing…' : 'Undo'}
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={replacementDraft}
-                    onChange={(e) => setReplacementDraft(e.target.value)}
-                    placeholder="Replaced with… (e.g. product name)"
-                    className="h-8 text-sm bg-background"
-                    maxLength={200}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="h-8 px-3 text-xs"
-                    onClick={handleSaveReplacement}
-                    disabled={
-                      savingReplacement ||
-                      !replacementDraft.trim() ||
-                      replacementDraft.trim() === replacement
-                    }
-                  >
-                    {savingReplacement
-                      ? 'Saving…'
-                      : replacement && replacement === replacementDraft.trim()
-                      ? 'Saved'
-                      : 'Save'}
-                  </Button>
-                </div>
-                {replacement && (
-                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
-                    Currently saved: <span className="font-medium">{replacement}</span>
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>
